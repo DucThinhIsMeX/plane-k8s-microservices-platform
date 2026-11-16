@@ -2,67 +2,109 @@
 <html lang="en">
 <head>
     <!--# include file="eum.html" -->
-    <title>Stan's Robot Shop</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stan's Robot Shop - Cloud-Native E-Commerce</title>
     <link rel="shortcut icon" type="image/png" href="/media/instana_icon_square.png"/>
-    <style type="text/css">
-        @import url('https://fonts.googleapis.com/css?family=Orbitron');
-        @import url('/css/style.css');
-        @import url('/css/auto-complete.css');
-    </style>
+    
+    <!-- Google Fonts & Stylesheet -->
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/auto-complete.css">
+    
     <meta http-equiv="Cache-Control" content="no-Cache">
     <meta http-equiv="Pragma" content="no-cache">
 </head>
 
 <body ng-app="robotshop">
 <div ng-controller="shopform">
-    <h1><a href="/">Stan's Robot Shop</a></h1>
-    <span id="stan">
-        <img src="/media/stan.png"/>
-    </span>
-    <span id="search">
-        <form>
-            <input type="text" size="20" ng-model="data.searchText"/>
-            <button ng-click="search();">Search</button>
-        </form>
-    </span>
 
-    <div class="row">
-        <!-- left nav -->
-        <div class="nav column">
-            <h3><a href="login">Login / Register</a></h3>
-            <h3><a href="cart">Cart</a></h3>
-            <div ng-if="data.cart.total == 0" class="carttotal">
-                Empty
+    <!-- Top Sticky Header -->
+    <header class="app-header">
+        <div class="header-container">
+            <a href="/" class="brand-wrapper">
+                <img src="/media/stan.png" alt="Logo" class="brand-logo"/>
+                <span class="brand-title">Stan's Robot Shop</span>
+            </a>
+
+            <!-- Search Bar -->
+            <div class="header-search">
+                <form class="search-box">
+                    <input type="text" placeholder="Search robots, AI, parts..." ng-model="data.searchText"/>
+                    <button type="button" ng-click="search();">Search</button>
+                </form>
             </div>
-            <div ng-if="data.cart.total != 0" class="carttotal">
-                &euro;{{ data.cart.total.toFixed(2) }}
+
+            <!-- Header Quick Actions -->
+            <div class="header-actions">
+                <a href="login" class="nav-pill-btn">
+                    <span>👤</span> Login / Register
+                </a>
+                <a href="cart" class="nav-pill-btn cart-btn">
+                    <span>🛒</span> Cart
+                    <span ng-if="data.cart.total == 0" class="cart-badge">0.00</span>
+                    <span ng-if="data.cart.total != 0" class="cart-badge">&euro;{{ data.cart.total.toFixed(2) }}</span>
+                </a>
             </div>
-            <h3>Categories</h3>
-            <ul class="products">
-                <li ng-repeat="cat in data.categories">
-                    <span ng-click="getProducts(cat);" class="category">{{ cat }}</span>
-                    <ul ng-if="data.products[cat]">
-                        <li ng-repeat="prod in data.products[cat]">
-                            <a class="product" href="product/{{ prod.sku }}">{{ prod.name }}</a>
-                        </li>
-                    </ul>
-                </li>
-            </ul>
         </div>
+    </header>
 
-        <!-- main display area -->
-        <div class="main column">
-            <div ng-view></div>
+    <!-- Main App Layout (Sidebar + Content View) -->
+    <main class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar-column">
+            <div class="sidebar-card">
+                <div class="sidebar-title">
+                    <span>⚡</span> Categories
+                </div>
+                <ul class="category-group">
+                    <li ng-repeat="cat in data.categories">
+                        <div ng-click="getProducts(cat);" class="category-item">
+                            <span>{{ cat }}</span>
+                            <span style="font-size: 11px; opacity: 0.6;">▶</span>
+                        </div>
+                        <ul ng-if="data.products[cat]" class="product-sublist">
+                            <li ng-repeat="prod in data.products[cat]">
+                                <a class="product-sublink" href="product/{{ prod.sku }}">
+                                    {{ prod.name }}
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <!-- DevOps Cluster Info Card -->
+                <div class="cluster-badge-card">
+                    <div class="badge-title">
+                        <span>☸️</span> K8s & GitOps Lab
+                    </div>
+                    <div class="badge-desc">
+                        12 Polyglot Microservices running on AWS Kubernetes, Traefik & ArgoCD.
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Display View Area -->
+        <section class="main-column">
+            <div class="main-content-card">
+                <div ng-view></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modern Footer -->
+    <footer class="app-footer">
+        <div>
+            <strong>Stan's Robot Shop</strong> &bull; DevOps & Cloud-Native Graduation Project
         </div>
-    </div>
-
-    <div class="footer">
-        {{ data.uniqueid }}
-    </div>
+        <div>
+            Session Node: <span style="font-family: monospace; color: var(--primary-light);">{{ data.uniqueid }}</span>
+        </div>
+    </footer>
 
 </div>
 
-<!-- JavaScript -->
+<!-- JavaScript Dependencies -->
 <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.7/angular.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.7/angular-route.js"></script>
 <script src="/js/auto-complete.js"></script>

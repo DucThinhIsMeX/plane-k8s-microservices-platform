@@ -1,22 +1,45 @@
 <!-- shipping template -->
 <div>
-    <h3>Shipping information</h3>
-    <div>
-        Select country <select ng-change="countryChanged();" ng-model="data.selectedCountry" ng-options="opt.name for opt in data.countries track by opt.code"></select>
-    </div>
-    <div>
-        Enter location <input id="location" type="text" size="20" ng-model="data.selectedLocation" ng-disabled="data.disableCity"/>
-    </div>
-    <div>
-        <button ng-click="calcShipping();" ng-disabled="data.disableCalc">Calculate</button>
-    </div>
-    <!-- add in shipping distance and cost -->
-    <div ng-if="data.shipping">
-        <div>Distance {{ data.shipping.distance }}km</div>
-        <div>Cost &euro;{{ data.shipping.cost.toFixed(2) }}</div>
+    <h3>Shipping & Delivery Calculation</h3>
+    <p style="color: var(--text-muted); margin-bottom: 24px;">
+        Microservice <code>shipping</code> (Java Spring Boot) sẽ tự động tính khoảng cách địa lý theo tọa độ GPS và tính toán chi phí vận chuyển.
+    </p>
+
+    <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 24px; max-width: 540px; display: flex; flex-direction: column; gap: 18px;">
         <div>
-            <button ng-click="confirmShipping();">Confirm</button>
+            <label style="display: block; font-size: 13.5px; font-weight: 600; color: var(--primary-light); margin-bottom: 8px;">
+                Select Destination Country:
+            </label>
+            <select style="width: 100%;" ng-change="countryChanged();" ng-model="data.selectedCountry" ng-options="opt.name for opt in data.countries track by opt.code">
+            </select>
+        </div>
+
+        <div>
+            <label style="display: block; font-size: 13.5px; font-weight: 600; color: var(--primary-light); margin-bottom: 8px;">
+                Enter City / Location:
+            </label>
+            <input id="location" style="width: 100%;" type="text" placeholder="Type city name..." ng-model="data.selectedLocation" ng-disabled="data.disableCity"/>
+        </div>
+
+        <div>
+            <button class="btn-primary" style="width: 100%; padding: 12px;" ng-click="calcShipping();" ng-disabled="data.disableCalc">
+                <span>📍</span> Calculate Shipping Cost
+            </button>
+        </div>
+
+        <!-- Shipping Result Card -->
+        <div ng-if="data.shipping" style="background: rgba(6, 182, 212, 0.1); border: 1px solid var(--border-glow); border-radius: var(--radius-sm); padding: 18px; margin-top: 8px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; font-size: 14.5px;">
+                <span style="color: var(--text-muted);">Calculated Distance:</span>
+                <strong style="color: #fff;">{{ data.shipping.distance }} km</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 700;">
+                <span style="color: var(--primary-light);">Shipping Rate:</span>
+                <span class="currency">&euro;{{ data.shipping.cost.toFixed(2) }}</span>
+            </div>
+            <button class="btn-primary" style="margin-top: 8px; background: linear-gradient(135deg, #10b981 0%, #059669 100%);" ng-click="confirmShipping();">
+                <span>✓</span> Confirm & Proceed to Payment
+            </button>
         </div>
     </div>
 </div>
-

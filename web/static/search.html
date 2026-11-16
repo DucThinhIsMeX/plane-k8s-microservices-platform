@@ -1,16 +1,36 @@
 <!-- search template -->
 <div>
-    <div ng-if="data.searchResults.length == 0">
-        Sorry nothing matches your search
+    <h3>Search Results</h3>
+
+    <div ng-if="data.searchResults.length == 0" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+        <div style="font-size: 2.5rem; margin-bottom: 8px;">🔍</div>
+        <p>Không tìm thấy sản phẩm nào khớp với từ khóa tìm kiếm của bạn.</p>
     </div>
+
     <div ng-if="data.searchResults.length != 0">
-        <h3>These ecellent candidates match your search</h3>
+        <p style="color: var(--text-muted); margin-bottom: 16px;">
+            Đã tìm thấy <strong style="color: #fff;">{{ data.searchResults.length }}</strong> sản phẩm phù hợp:
+        </p>
+
         <table>
-            <tr ng-repeat="item in data.searchResults">
-                <td><a class="product" href="/product/{{ item.sku }}">{{ item.name }}</a></td>
-                <td>{{ item.description }}</td>
-                <td>&euro;{{ item.price }}</td>
-            </tr>
+            <thead>
+                <tr>
+                    <th style="width: 200px;">Product Name</th>
+                    <th>Description</th>
+                    <th style="width: 130px; text-align: right;">Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="item in data.searchResults">
+                    <td>
+                        <a class="product-sublink" style="color: var(--primary-light); font-weight: 700; font-size: 14.5px;" href="/product/{{ item.sku }}">
+                            {{ item.name }}
+                        </a>
+                    </td>
+                    <td style="color: var(--text-muted); font-size: 13.5px;">{{ item.description }}</td>
+                    <td class="currency">&euro;{{ item.price }}</td>
+                </tr>
+            </tbody>
         </table>
     </div>
 </div>

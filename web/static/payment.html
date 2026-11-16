@@ -1,43 +1,62 @@
 <!-- payment template -->
 <div>
-    <h3>Review your order</h3>
+    <h3>Review & Complete Payment</h3>
+    <p style="color: var(--text-muted); margin-bottom: 20px;">
+        Vui lòng kiểm tra lại đơn hàng trước khi thực hiện thanh toán qua microservice <code>payment</code>.
+    </p>
+
     <div ng-if="data.cart.total != 0">
         <table>
-            <tr>
-                <th>QTY</th>
-                <th>Name</th>
-                <th>Sub Total</th>
-            </tr>
-            <tr ng-repeat="item in data.cart.items">
-                <td>{{ item.qty }}</td>
-                <td>{{ item.name }}</td>
-                <td class="currency">&euro;{{ item.subtotal.toFixed(2) }}</td>
-            </tr>
-            <tr>
-                <td colspan="3">&nbsp;</td>
-            </tr>
-            <tr>
-                <td>&nbsp;</td>
-                <td>Inc Tax</td>
-                <td class="currency">&euro;{{ data.cart.tax.toFixed(2) }}</td>
-            </tr>
-            <tr>
-                <td>&nbsp;</td>
-                <td>Total</td>
-                <td class="currency">&euro;{{ data.cart.total.toFixed(2) }}</td>
-            </tr>
-            <tr>
-                <td colspan="3">
-                    <button ng-disabled="data.buttonDisabled" ng-click="pay();">Pay Now</button>
-                </td>
-            </tr>
+            <thead>
+                <tr>
+                    <th style="width: 80px;">QTY</th>
+                    <th>Item Description</th>
+                    <th style="width: 150px; text-align: right;">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="item in data.cart.items">
+                    <td style="font-weight: 700; color: var(--primary-light);">{{ item.qty }}x</td>
+                    <td style="font-weight: 600;">{{ item.name }}</td>
+                    <td class="currency">&euro;{{ item.subtotal.toFixed(2) }}</td>
+                </tr>
+            </tbody>
         </table>
+
+        <!-- Payment Breakdown Card -->
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 22px 26px; max-width: 440px; margin-left: auto; margin-top: 20px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; justify-content: space-between; font-size: 14px; color: var(--text-muted);">
+                <span>Estimated Tax (VAT):</span>
+                <span class="currency" style="font-size: 14px;">&euro;{{ data.cart.tax.toFixed(2) }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 1.25rem; font-weight: 700; color: #fff; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 12px;">
+                <span>Total Payment:</span>
+                <span class="currency" style="font-size: 1.5rem;">&euro;{{ data.cart.total.toFixed(2) }}</span>
+            </div>
+
+            <button class="btn-primary" style="margin-top: 12px; padding: 14px 24px; font-size: 16px; font-weight: 700; background: linear-gradient(135deg, #06b6d4 0%, #10b981 100%);" ng-disabled="data.buttonDisabled" ng-click="pay();">
+                <span>💳</span> Pay Now
+            </button>
+        </div>
     </div>
-    <div class="message">
+
+    <!-- Error / Status Message -->
+    <div class="message" ng-if="data.message">
         {{ data.message }}
     </div>
-    <div ng-if="data.cont">
-        Thank you for your order
-        <a class="cont" href="/">Continue shopping</a>
+
+    <!-- Order Success Card -->
+    <div ng-if="data.cont" class="success-box">
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 1.2rem; font-weight: 700; color: #fff;">
+            <span>🎉</span> Đặt hàng và Thanh toán thành công!
+        </div>
+        <p style="margin: 0; color: #cbd5e1; font-size: 14px;">
+            Thông điệp đơn hàng đã được đẩy vào hàng đợi RabbitMQ để bộ phận <code>dispatch</code> xuất kho.
+        </p>
+        <div style="margin-top: 12px;">
+            <a class="nav-pill-btn" href="/" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5);">
+                <span>🛍️</span> Tiếp tục mua sắm
+            </a>
+        </div>
     </div>
 </div>

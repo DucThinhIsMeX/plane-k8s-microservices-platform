@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: user
-        image: ducthinhahihi/rs-user:v1.0
+        image: ducthinhahihi/rs-user:a31c34f
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080

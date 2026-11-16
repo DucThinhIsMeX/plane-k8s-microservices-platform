@@ -1,64 +1,39 @@
 <!-- product details -->
 <div>
-    <div class="message" ng-if="data.message">
+    <div class="message">
         {{ data.message }}
     </div>
 
     <h3>{{ data.product.name }}</h3>
-
-    <div class="product-detail-grid">
-        <!-- Left: Glowing Product Image Frame -->
-        <div class="productimage">
-            <img src="/images/{{ data.product.sku }}.png" alt="{{ data.product.name }}"/>
-        </div>
-
-        <!-- Right: Details & Purchase Actions -->
-        <div class="product-info-panel">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div class="product-price-tag">
-                    &euro;{{ data.product.price.toFixed(2) }}
-                </div>
-                <div>
-                    <span ng-if="data.product.instock != 0" class="stock-pill stock-in">● In Stock</span>
-                    <span ng-if="data.product.instock == 0" class="stock-pill stock-out">● Out of stock</span>
-                </div>
-            </div>
-
-            <!-- Rating Box -->
-            <div class="rating-box">
-                <div class="stars-container">
-                    <span ng-repeat="vote in [ 1, 2, 3, 4, 5 ]">
-                        <img id="vote-{{ vote }}" class="vote-star" alt="{{ vote }}" ng-mouseover="glowstan(vote, 1.0);" ng-mouseleave="glowstan(vote, 0.5);" src="/media/instana_icon_square.png" ng-click="rateProduct(vote);"/>
-                    </span>
-                </div>
-                <div style="font-size: 13.5px; color: var(--text-muted);">
-                    <span ng-if="data.rating.avg_rating != 0">
-                        <strong style="color: #fff;">{{ data.rating.avg_rating.toFixed(1) }}</strong> / 5.0 ({{ data.rating.rating_count }} reviews)
-                    </span>
-                    <span ng-if="data.rating.avg_rating == 0">
-                        Chưa có đánh giá. Nhấp sao để bình chọn!
-                    </span>
-                </div>
-            </div>
-
-            <!-- Description -->
-            <div class="description">
-                {{ data.product.description }}
-            </div>
-
-            <!-- Add to Cart Panel -->
-            <div class="productcart">
-                <span ng-if="data.product.instock != 0" style="display: flex; align-items: center; gap: 14px; width: 100%;">
-                    <label style="font-size: 14px; font-weight: 600; color: var(--text-muted);">Quantity:</label>
-                    <input type="number" style="width: 70px;" min="1" max="10" ng-model="data.quantity"/>
-                    <button class="btn-primary" style="flex: 1;" ng-click="addToCart();">
-                        <span>🛒</span> Add to Cart
-                    </button>
-                </span>
-                <span ng-if="data.product.instock == 0" style="color: var(--danger); font-weight: 600;">
-                    Sản phẩm này tạm thời hết hàng trong kho.
-                </span>
-            </div>
+    <div class="productimage">
+        <img src="/images/{{ data.product.sku }}.png"/>
+    </div>
+    <div class="rating">
+        Rating
+        <span ng-if="data.rating.avg_rating != 0">
+            {{ data.rating.avg_rating.toFixed(1) }} from {{ data.rating.rating_count }} votes
+        </span>
+        <span ng-if="data.rating.avg_rating == 0">
+            No votes yet. Vote now.
+        </span>
+        <div>
+            <span ng-repeat="vote in [ 1, 2, 3, 4, 5 ]">
+                <img id="vote-{{ vote }}" class="vote-star" alt="{{ vote }}" ng-mouseover="glowstan(vote, 1.0);" ng-mouseleave="glowstan(vote, 0.5); "src="/media/instana_icon_square.png" ng-click="rateProduct(vote);"/>
+            </span>
         </div>
     </div>
+    <div class="description">
+        {{ data.product.description }}
+    </div>
+    <div class="productcart">
+        Price &euro;{{ data.product.price.toFixed(2) }}
+        <span ng-if="data.product.instock == 0">
+            Out of stock
+        </span>
+        <span ng-if="data.product.instock != 0">
+            Quantity <input type="number" size="2" min="1" max="10" ng-model="data.quantity"/>
+            <button ng-click="addToCart();">Add to cart</button>
+        </span>
+    </div>
 </div>
+

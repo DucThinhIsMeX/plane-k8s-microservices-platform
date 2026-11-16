@@ -1,52 +1,41 @@
 <!-- shopping cart -->
 <div>
-    <h3>Shopping Cart</h3>
-    <p style="font-size: 13.5px; color: var(--text-dim);">
-        Session ID: <code>{{ data.uniqueid }}</code>
-    </p>
-
-    <!-- Empty State -->
-    <div ng-if="data.cart.total == 0" style="text-align: center; padding: 48px 20px;">
-        <div style="font-size: 3rem; margin-bottom: 12px; opacity: 0.7;">🛒</div>
-        <h4 style="font-size: 1.2rem; color: #fff; margin-bottom: 8px;">Your cart is currently empty</h4>
-        <p style="color: var(--text-muted); margin-bottom: 24px;">Hãy chọn một mẫu Robot hoặc AI từ danh mục bên trái để bắt đầu mua sắm.</p>
-        <a href="/" class="nav-pill-btn" style="display: inline-flex;">Khám phá sản phẩm</a>
+    Shopping cart for {{ data.uniqueid }}
+    <div ng-if="data.cart.total == 0">
+        Your cart is empty, get shopping
     </div>
-
-    <!-- Cart Table State -->
     <div ng-if="data.cart.total != 0">
         <table>
-            <thead>
-                <tr>
-                    <th style="width: 100px;">Quantity</th>
-                    <th>Product Name</th>
-                    <th style="width: 150px; text-align: right;">Subtotal</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr ng-repeat="item in data.cart.items">
-                    <td>
-                        <input type="number" style="width: 65px;" min="0" max="10" ng-model="item.qty" ng-change="change(item.sku, item.qty);"/>
-                    </td>
-                    <td style="font-weight: 600;">{{ item.name }}</td>
-                    <td class="currency">&euro;{{ item.subtotal.toFixed(2) }}</td>
-                </tr>
-            </tbody>
+            <tr>
+                <th>QTY</th>
+                <th>Name</th>
+                <th>Sub Total</th>
+            </tr>
+            <tr ng-repeat="item in data.cart.items">
+                <td>
+                    <input type="number" size="2" min="0" max="10" ng-model="item.qty" ng-change="change(item.sku, item.qty);"/>
+                </td>
+                <td>{{ item.name }}</td>
+                <td class="currency">&euro;{{ item.subtotal.toFixed(2) }}</td>
+            </tr>
+            <tr>
+                <td colspan="3">&nbsp;</td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+                <td>Inc Tax</td>
+                <td class="currency">&euro;{{ data.cart.tax.toFixed(2) }}</td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+                <td>Total</td>
+                <td class="currency">&euro;{{ data.cart.total.toFixed(2) }}</td>
+            </tr>
+            <tr>
+                <td colspan="3">
+                    <button ng-click="buy();">Checkout</button>
+                </td>
+            </tr>
         </table>
-
-        <!-- Order Summary Card -->
-        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 20px 24px; margin-top: 20px; display: flex; flex-direction: column; gap: 12px; max-width: 420px; margin-left: auto;">
-            <div style="display: flex; justify-content: space-between; color: var(--text-muted); font-size: 14px;">
-                <span>Tax (Inc. VAT):</span>
-                <span class="currency" style="font-size: 14px;">&euro;{{ data.cart.tax.toFixed(2) }}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; color: #fff; font-size: 1.2rem; font-weight: 700; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 12px;">
-                <span>Total Amount:</span>
-                <span class="currency" style="font-size: 1.4rem;">&euro;{{ data.cart.total.toFixed(2) }}</span>
-            </div>
-            <button class="btn-primary" style="margin-top: 10px; padding: 12px 24px; font-size: 15px;" ng-click="buy();">
-                <span>🚚</span> Proceed to Shipping
-            </button>
-        </div>
     </div>
 </div>

@@ -172,31 +172,67 @@ File workflow [.github/workflows/ci-cd.yml](file:///c:/Users/Duc%20Thinh/Documen
 
 ---
 
+### 🏁 Chặng 8: Tự động Co giãn Chịu tải (Horizontal Pod Autoscaler - HPA v2 cho 8/8 Microservices) & Thử nghiệm Bắn tải (100% Hoàn thành)
+* **Khai báo HPA v2 chuẩn hóa ([K8s/06-scaling/hpa.yaml](file:///c:/Users/Duc%20Thinh/Documents/Học%20tập/Đồ%20án%20chuyên%20ngành/robot-shop-devops-lab/K8s/06-scaling/hpa.yaml)):**
+  * Triển khai đồng loạt cơ chế tự động co giãn cho **toàn bộ 8 Stateless Microservices**: `web`, `cart`, `catalogue`, `user`, `shipping`, `payment`, `ratings`, `dispatch`.
+  * **Ngưỡng kích hoạt:** Tự động tăng Pod khi CPU trung bình vượt quá **40% - 50%**.
+  * **Phạm vi co giãn:** Tối thiểu 1 Pod, tối đa 5 Pods cho mỗi dịch vụ.
+  * **Chính sách co giãn thông minh (Scaling Behavior):**
+    * *Scale-up:* `stabilizationWindowSeconds: 0` — phản ứng tức thì, thêm Pod ngay khi có đột biến lưu lượng truy cập nhằm chống nghẽn cổ chai.
+    * *Scale-down:* `stabilizationWindowSeconds: 60` — hạ Pod từ từ, tránh hiện tượng co giật tài nguyên (Pod Flapping).
+* **Công cụ thử nghiệm tải thực tế ([K8s/06-scaling/load-gen.yaml](file:///c:/Users/Duc%20Thinh/Documents/Học%20tập/Đồ%20án%20chuyên%20ngành/robot-shop-devops-lab/K8s/06-scaling/load-gen.yaml)):**
+  * Tích hợp công cụ Locust tạo tải động (mô phỏng hành vi hàng ngàn người dùng thêm giỏ hàng, tra cứu sản phẩm, thanh toán), cho phép sinh viên demo trực tiếp trước giảng viên quá trình Pod tự động nhân rộng từ 1 lên 3 hoặc 5 Pods theo thời gian thực.
+* **Xử lý xung đột GitOps kinh điển giữa ArgoCD và HPA:**
+  * *Vấn đề phát sinh:* Khi HPA tăng số Pod từ 1 lên 3 hoặc 5, ArgoCD kích hoạt tính năng `selfHeal` và cưỡng chế xóa Pod mới để đưa số lượng về 1 theo khai báo trong file manifest trên Git.
+  * *Giải pháp:* Cấu hình `ignoreDifferences` trong [K8s/99-argocd/application.yaml](file:///c:/Users/Duc%20Thinh/Documents/Học%20tập/Đồ%20án%20chuyên%20ngành/robot-shop-devops-lab/K8s/99-argocd/application.yaml) đối với đường dẫn `/spec/replicas` của `apps/Deployment`. Kết quả: HPA có toàn quyền điều khiển số lượng Pod theo tải thực tế mà ArgoCD vẫn giữ trạng thái xanh lá `Synced & Healthy`.
+
+---
+
+### 🏁 Chặng 9: Sửa lỗi Nghiệp vụ Payment Gateway & Nâng cấp Pipeline CI/CD Thông minh (100% Hoàn thành)
+* **Khắc phục lỗi thanh toán PayPal 403 & uWSGI Single-thread Deadlock:**
+  * Vi dịch vụ `payment` (Python Flask/uWSGI) chạy ở chế độ đơn tiến trình; khi khách thanh toán gọi kiểm tra cổng nội bộ sẽ bị treo vĩnh viễn (deadlock) và báo lỗi 403.
+  * *Giải pháp:* Cấu hình tách biệt biến môi trường `PAYMENT_GATEWAY` trong [K8s/01-configs/configmap.yaml](file:///c:/Users/Duc%20Thinh/Documents/Học%20tập/Đồ%20án%20chuyên%20ngành/robot-shop-devops-lab/K8s/01-configs/configmap.yaml) và ánh xạ vào [K8s/03-microservices/payment.yaml](file:///c:/Users/Duc%20Thinh/Documents/Học%20tập/Đồ%20án%20chuyên%20ngành/robot-shop-devops-lab/K8s/03-microservices/payment.yaml) trỏ về endpoint của dịch vụ `catalogue`, giúp chu trình thanh toán giỏ hàng thành công 100%.
+* **Nâng cấp Pipeline CI/CD Thông minh (Intelligent Matrix Multi-service CI/CD):**
+  * Nâng cấp [.github/workflows/ci-cd.yml](file:///c:/Users/Duc%20Thinh/Documents/Học%20tập/Đồ%20án%20chuyên%20ngành/robot-shop-devops-lab/.github/workflows/ci-cd.yml) với cơ chế lọc thay đổi (**Path Filtering**): Chỉ tự động kích hoạt Build & Quét an ninh cho đúng microservice có mã nguồn bị thay đổi, tránh lãng phí tài nguyên và thời gian build toàn bộ repo.
+  * **Kiểm chứng thực tế:** Pipeline Run #6 (Commit `5f37480` - `test(ci): trigger intelligent CI/CD pipeline for payment service`) chạy thành công 100% xanh lá (All checks passed) trên GitHub Actions: Linting $\rightarrow$ Trivy Scan $\rightarrow$ Build Docker $\rightarrow$ Push Docker Hub $\rightarrow$ Auto-update Git Manifest.
+
+---
+
+### 🏁 Chặng 10: Đồng bộ hóa Toàn diện Hạ tầng Ansible IaC & GitOps (100% Hoàn thành)
+* **Tự động hóa 100% việc khởi động lại cụm:**
+  * Đã tích hợp task tự động triển khai ArgoCD Application vào Ansible role ([IAC/ansible/roles/addons/tasks/main.yml](file:///c:/Users/Duc%20Thinh/Documents/Học%20tập/Đồ%20án%20chuyên%20ngành/robot-shop-devops-lab/IAC/ansible/roles/addons/tasks/main.yml)). Khi chạy lại Ansible trên môi trường AWS mới, toàn bộ cụm K8s và ứng dụng Robot Shop sẽ tự động được kéo về và chạy trơn tru mà không cần cấu hình thủ công.
+* **Đồng bộ hóa Manifest & Git Repository:**
+  * Toàn bộ 12 Pods microservices & databases, 8 bộ HPA, Ingress Controller và StorageClass đều đồng bộ tuyệt đối giữa GitHub, ArgoCD và Kubernetes Cluster.
+
+---
+
 ## 3. BẢNG TỔNG HỢP HIỆN TRẠNG TOÀN DIỆN CỦA HỆ THỐNG
 
 | Thành phần | Công nghệ / Nền tảng | Trạng thái hiện tại | Địa chỉ truy cập / Endpoint |
 | :--- | :--- | :---: | :--- |
-| **Ứng dụng Web Store** | Node.js + AngularJS + Nginx | 🟢 Active (1/1) | `http://<worker-ip>:30080` |
-| **Hệ thống Quản trị** | **Rancher Dashboard v2.9** | 🟢 Active (1/1) | `https://<rancher-ip>/dashboard` |
-| **Hệ thống GitOps CD** | **ArgoCD v2.12** | 🟢 Synced & Healthy | `https://<worker-ip>:30085` |
-| **Quy trình CI** | **GitHub Actions (5 Stages)** | 🟢 Hoàn thành code | Tab Actions trên GitHub Repository |
+| **Ứng dụng Web Store** | Node.js + AngularJS + Nginx | 🟢 Active (1/1 đến 5/5) | `http://robot-shop-dev-nlb-9a767acfbcc2572c.elb.us-east-1.amazonaws.com` (Cổng 80) hoặc `<worker-ip>:30080` |
+| **Hệ thống Quản trị** | **Rancher Dashboard v2.9** | 🟢 Active (1/1) | `https://54.147.44.217/dashboard` |
+| **Hệ thống GitOps CD** | **ArgoCD v2.12** | 🟢 Synced & Healthy | `https://robot-shop-dev-nlb-9a767acfbcc2572c.elb.us-east-1.amazonaws.com:30085` |
+| **Quy trình CI Thông minh** | **GitHub Actions (Matrix CI/CD)** | 🟢 Hoàn thành (Run #6 Pass) | Tab Actions trên GitHub Repository |
+| **Tự động Co giãn (HPA)** | **Kubernetes HPA v2** | 🟢 8/8 HPA Active | Tự động tăng giảm 1-5 Pods theo tải CPU (40%-50%) |
+| **Công cụ Tạo tải (Load Test)**| **Locust (Python Load Generator)**| 🟢 Sẵn sàng demo | Triển khai qua `K8s/06-scaling/load-gen.yaml` |
 | **Kho Image** | **Docker Hub** (`ducthinhahihi`) | 🟢 10/10 Images live | `hub.docker.com/u/ducthinhahihi` |
-| **Lưu trữ CSDL** | **PV / PVC / StorageClass** | 🟢 Cấu hình sẵn sàng | `mongodb-pvc`, `mysql-pvc`, `redis-pvc` |
+| **Lưu trữ Bền vững CSDL** | **PV / PVC / Rancher Local Path** | 🟢 3/3 PVCs Bound | `mongodb-pvc`, `mysql-pvc`, `redis-pvc` |
 | **Cụm Kubernetes** | Kubernetes `v1.31` (1 Master, 2 Workers) | 🟢 3 Nodes Ready | Calico CNI VXLAN (`192.168.0.0/16`) |
+| **Cân bằng tải Đám mây** | **AWS Network Load Balancer (NLB)** | 🟢 Active | Routing Ports `80` (Web), `443` (Traefik), `30085` (ArgoCD) |
 
 ---
 
-## 4. KẾ HOẠCH NÂNG CẤP TIẾP THEO (MỤC TIÊU ĐẠT ĐIỂM 10 TUYỆT ĐỐI)
+## 4. KẾ HOẠCH NÂNG CẤP TIẾP THEO & KỊCH BẢN BẢO VỆ ĐỒ ÁN
 
-Để hoàn thiện đồ án ở mức xuất sắc nhất, các tính năng tiếp theo sẽ được triển khai gồm:
+Để chuẩn bị buổi báo cáo và bảo vệ đồ án đạt kết quả cao nhất:
 
-1. **Horizontal Pod Autoscaler (HPA) & Load Testing (Ưu tiên số 1):**
-   * Thiết lập HPA cho microservices (`web`, `cart`).
-   * Sử dụng công cụ `load-gen` (Locust) để bắn tải mô phỏng lượng truy cập lớn, chứng minh Pod tự động co giãn từ 1 lên 3 hoặc 5 Pods theo thời gian thực.
-2. **Quan sát & Giám sát tập trung (Rancher Monitoring / Prometheus & Grafana):**
-   * Kích hoạt dashboard hiển thị trực quan thông số CPU, RAM, Network I/O, số request/giây (RPS).
-3. **Kịch bản Demo Chaos Engineering & Tự chữa lành:**
-   * Trình diễn khả năng tự phục hồi của ArgoCD và Kubernetes khi Pod hoặc Service bị cố tình xóa bỏ.
-4. **Bảo mật bí mật GitOps nâng cao (Bitnami Sealed Secrets):**
-   * Mã hóa bất đối xứng các mật khẩu trong Git để loại bỏ rủi ro lộ Secret trên GitHub.
+1. **Kịch bản Demo Trực tiếp trước Hội đồng chấm thi:**
+   * **Demo 1 (GitOps & CI/CD khép kín):** Đẩy một thay đổi nhỏ mã nguồn lên GitHub $\rightarrow$ Theo dõi GitHub Actions tự động build, scan Trivy và push image $\rightarrow$ ArgoCD tự động kéo phiên bản mới về cụm mà không gián đoạn dịch vụ (Zero-Downtime Rolling Update).
+   * **Demo 2 (Tự động co giãn chịu tải - HPA):** Bật pod `load-gen` để bắn tải $\rightarrow$ Trình chiếu trên Rancher Dashboard và dòng lệnh `kubectl get hpa -w` số lượng Pod `web`, `cart`, `catalogue` tự động nhân rộng từ 1 lên 3 và 5 Pods $\rightarrow$ Tắt tải, quan sát Pod tự động hạ về 1 an toàn.
+   * **Demo 3 (Tự chữa lành - Self Healing):** Cố tình xóa 1 Pod hoặc Service của CSDL $\rightarrow$ Kubernetes và ArgoCD ngay lập tức phát hiện và tái tạo lại tài nguyên trong tích tắc.
+2. **Quan sát & Giám sát Nâng cao (Monitoring với Prometheus & Grafana):**
+   * Tích hợp Prometheus & Grafana dashboard để biểu diễn đồ thị tải CPU, RAM và số lượng request theo thời gian thực một cách chuyên nghiệp.
+3. **Bảo mật Bí mật Nâng cao (Bitnami Sealed Secrets):**
+   * Mã hóa bất đối xứng các Secret nhạy cảm để đưa lên GitHub an toàn 100%.
 

@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: web
-        image: ducthinhahihi/rs-web:497ff35
+        image: ducthinhahihi/rs-web:0e38cf8
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080

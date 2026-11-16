@@ -163,16 +163,7 @@ File workflow [.github/workflows/ci-cd.yml](file:///c:/Users/Duc%20Thinh/Documen
 
 ---
 
-### 🏁 Chặng 7: Dọn dẹp & Tối ưu hóa Kho mã nguồn (100% Hoàn thành)
-* Đã thanh lọc toàn bộ các tệp tin và thư mục không còn sử dụng:
-  * Xóa thư mục thừa `_legacy/` (chứa các cấu hình cũ OpenShift, DCOS, Swarm).
-  * Xóa thư mục `fluentd/`.
-  * Xóa các script phụ trợ cũ: `build-and-push-all.ps1`, `docker-compose-load.yaml`, `pullbaseimages.sh`.
-* Bảo toàn 100% các tài liệu báo cáo và khảo sát của đồ án.
-
----
-
-### 🏁 Chặng 8: Tự động Co giãn Chịu tải (Horizontal Pod Autoscaler - HPA v2 cho 8/8 Microservices) & Thử nghiệm Bắn tải (100% Hoàn thành)
+### 🏁 Chặng 7: Tự động Co giãn Chịu tải (Horizontal Pod Autoscaler - HPA v2 cho 8/8 Microservices) & Thử nghiệm Bắn tải (100% Hoàn thành)
 * **Khai báo HPA v2 chuẩn hóa ([K8s/06-scaling/hpa.yaml](file:///c:/Users/Duc%20Thinh/Documents/Học%20tập/Đồ%20án%20chuyên%20ngành/robot-shop-devops-lab/K8s/06-scaling/hpa.yaml)):**
   * Triển khai đồng loạt cơ chế tự động co giãn cho **toàn bộ 8 Stateless Microservices**: `web`, `cart`, `catalogue`, `user`, `shipping`, `payment`, `ratings`, `dispatch`.
   * **Ngưỡng kích hoạt:** Tự động tăng Pod khi CPU trung bình vượt quá **40% - 50%**.
@@ -185,24 +176,6 @@ File workflow [.github/workflows/ci-cd.yml](file:///c:/Users/Duc%20Thinh/Documen
 * **Xử lý xung đột GitOps kinh điển giữa ArgoCD và HPA:**
   * *Vấn đề phát sinh:* Khi HPA tăng số Pod từ 1 lên 3 hoặc 5, ArgoCD kích hoạt tính năng `selfHeal` và cưỡng chế xóa Pod mới để đưa số lượng về 1 theo khai báo trong file manifest trên Git.
   * *Giải pháp:* Cấu hình `ignoreDifferences` trong [K8s/99-argocd/application.yaml](file:///c:/Users/Duc%20Thinh/Documents/Học%20tập/Đồ%20án%20chuyên%20ngành/robot-shop-devops-lab/K8s/99-argocd/application.yaml) đối với đường dẫn `/spec/replicas` của `apps/Deployment`. Kết quả: HPA có toàn quyền điều khiển số lượng Pod theo tải thực tế mà ArgoCD vẫn giữ trạng thái xanh lá `Synced & Healthy`.
-
----
-
-### 🏁 Chặng 9: Sửa lỗi Nghiệp vụ Payment Gateway & Nâng cấp Pipeline CI/CD Thông minh (100% Hoàn thành)
-* **Khắc phục lỗi thanh toán PayPal 403 & uWSGI Single-thread Deadlock:**
-  * Vi dịch vụ `payment` (Python Flask/uWSGI) chạy ở chế độ đơn tiến trình; khi khách thanh toán gọi kiểm tra cổng nội bộ sẽ bị treo vĩnh viễn (deadlock) và báo lỗi 403.
-  * *Giải pháp:* Cấu hình tách biệt biến môi trường `PAYMENT_GATEWAY` trong [K8s/01-configs/configmap.yaml](file:///c:/Users/Duc%20Thinh/Documents/Học%20tập/Đồ%20án%20chuyên%20ngành/robot-shop-devops-lab/K8s/01-configs/configmap.yaml) và ánh xạ vào [K8s/03-microservices/payment.yaml](file:///c:/Users/Duc%20Thinh/Documents/Học%20tập/Đồ%20án%20chuyên%20ngành/robot-shop-devops-lab/K8s/03-microservices/payment.yaml) trỏ về endpoint của dịch vụ `catalogue`, giúp chu trình thanh toán giỏ hàng thành công 100%.
-* **Nâng cấp Pipeline CI/CD Thông minh (Intelligent Matrix Multi-service CI/CD):**
-  * Nâng cấp [.github/workflows/ci-cd.yml](file:///c:/Users/Duc%20Thinh/Documents/Học%20tập/Đồ%20án%20chuyên%20ngành/robot-shop-devops-lab/.github/workflows/ci-cd.yml) với cơ chế lọc thay đổi (**Path Filtering**): Chỉ tự động kích hoạt Build & Quét an ninh cho đúng microservice có mã nguồn bị thay đổi, tránh lãng phí tài nguyên và thời gian build toàn bộ repo.
-  * **Kiểm chứng thực tế:** Pipeline Run #6 (Commit `5f37480` - `test(ci): trigger intelligent CI/CD pipeline for payment service`) chạy thành công 100% xanh lá (All checks passed) trên GitHub Actions: Linting $\rightarrow$ Trivy Scan $\rightarrow$ Build Docker $\rightarrow$ Push Docker Hub $\rightarrow$ Auto-update Git Manifest.
-
----
-
-### 🏁 Chặng 10: Đồng bộ hóa Toàn diện Hạ tầng Ansible IaC & GitOps (100% Hoàn thành)
-* **Tự động hóa 100% việc khởi động lại cụm:**
-  * Đã tích hợp task tự động triển khai ArgoCD Application vào Ansible role ([IAC/ansible/roles/addons/tasks/main.yml](file:///c:/Users/Duc%20Thinh/Documents/Học%20tập/Đồ%20án%20chuyên%20ngành/robot-shop-devops-lab/IAC/ansible/roles/addons/tasks/main.yml)). Khi chạy lại Ansible trên môi trường AWS mới, toàn bộ cụm K8s và ứng dụng Robot Shop sẽ tự động được kéo về và chạy trơn tru mà không cần cấu hình thủ công.
-* **Đồng bộ hóa Manifest & Git Repository:**
-  * Toàn bộ 12 Pods microservices & databases, 8 bộ HPA, Ingress Controller và StorageClass đều đồng bộ tuyệt đối giữa GitHub, ArgoCD và Kubernetes Cluster.
 
 ---
 

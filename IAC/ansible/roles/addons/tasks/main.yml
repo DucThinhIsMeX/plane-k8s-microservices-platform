@@ -125,6 +125,16 @@
         '{"spec": {"type": "NodePort", "ports": [{"port": 443, "targetPort": 8080, "nodePort": {{ ingress_argocd_node_port }}}]}}'
       changed_when: true
 
+    # ---------- Kích hoạt GitOps Robot Shop trên ArgoCD ----------
+    - name: Chờ ArgoCD CRD Applications sẵn sàng
+      ansible.builtin.command: kubectl wait --for=condition=established crd/applications.argoproj.io --timeout=120s
+      changed_when: false
+
+    - name: Kích hoạt ứng dụng Robot Shop trên ArgoCD (GitOps)
+      ansible.builtin.command: >
+        kubectl apply -f https://raw.githubusercontent.com/DucThinhIsMeX/robot-shop-devops-lab/main/K8s/99-argocd/application.yaml
+      changed_when: true
+
 - name: Lấy kubeconfig về máy điều khiển
   ansible.builtin.fetch:
     src: "{{ kubeconfig_admin }}"

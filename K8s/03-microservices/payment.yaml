@@ -37,6 +37,11 @@ spec:
             configMapKeyRef:
               name: robot-shop-config
               key: AMQP_HOST
+        - name: PAYMENT_GATEWAY
+          valueFrom:
+            configMapKeyRef:
+              name: robot-shop-config
+              key: PAYMENT_GATEWAY
         livenessProbe:
           httpGet:
             path: /health

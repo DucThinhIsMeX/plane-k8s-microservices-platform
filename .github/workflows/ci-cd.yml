@@ -44,7 +44,7 @@ jobs:
   # Chỉ kích hoạt pipeline cho các microservices thực sự có thay đổi mã nguồn
   # =========================================================================
   detect-changes:
-    name: "🔍 1. Phát hiện Dịch vụ Thay đổi"
+    name: "1. Phát hiện Dịch vụ Thay đổi"
     runs-on: ubuntu-latest
     outputs:
       has_changes: ${{ steps.filter.outputs.has_changes }}
@@ -104,7 +104,7 @@ jobs:
   # PHẦN 2: CHU TRÌNH 5 STAGE DEVSECOPS & GITOPS CHO TỪNG DỊCH VỤ
   # =========================================================================
   ci-cd-pipeline:
-    name: "🚀 Pipeline: ${{ matrix.service }}"
+    name: "Pipeline: ${{ matrix.service }}"
     needs: [ detect-changes ]
     if: ${{ needs.detect-changes.outputs.has_changes == 'true' }}
     runs-on: ubuntu-latest
@@ -236,7 +236,7 @@ jobs:
           MANIFEST_PATH="${{ env.MANIFEST }}"
           
           if [ ! -f "$MANIFEST_PATH" ]; then
-            echo "❌ Không tìm thấy file manifest: $MANIFEST_PATH"
+            echo " Không tìm thấy file manifest: $MANIFEST_PATH"
             exit 1
           fi
 
@@ -272,7 +272,7 @@ jobs:
             if [ $SUCCESS -eq 1 ]; then
               echo " Đã commit & push Manifest K8s lên Git thành công! ArgoCD sẽ tự động kích hoạt Rolling Update."
             else
-              echo "❌ Không thể push commit sau $MAX_RETRIES lần thử."
+              echo " Không thể push commit sau $MAX_RETRIES lần thử."
               exit 1
             fi
           fi

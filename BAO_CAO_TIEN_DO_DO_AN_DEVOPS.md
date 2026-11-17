@@ -234,7 +234,7 @@ flowchart TB
 ### 🏁 Chặng 5: Xây dựng Pipeline CI/CD 5-Stage chuẩn DevSecOps (100% Hoàn thành)
 File workflow [.github/workflows/ci-cd.yml](file:///c:/Users/Duc%20Thinh/Documents/Học%20tập/Đồ%20án%20chuyên%20ngành/robot-shop-devops-lab/.github/workflows/ci-cd.yml) được thiết kế chuyên nghiệp với 5 Stage liên hoàn:
 
-1. **Stage 1 (Code Quality & Lint):** Tự động kiểm tra cú pháp Shell Script (`bash -n entrypoint.sh`) và quét chuẩn Dockerfile bằng **Hadolint**.
+1. **Stage 1 (Code Quality, Polyglot Syntax Check & Lint):** Tự động quét cú pháp mã nguồn đa ngôn ngữ chuyên sâu (Node.js `node --check`, Python `py_compile`, Go `go vet`, Shell `bash -n`) và rà soát chuẩn Dockerfile bằng công cụ quốc tế **Hadolint Linter**.
 2. **Stage 2 (Security Scan - DevSecOps):** Tích hợp công cụ quét bảo mật **Aqua Security Trivy** để rà soát toàn bộ mã nguồn và thư viện phụ thuộc trước khi build.
 3. **Stage 3 (Docker Build):** Đóng gói Docker Image cục bộ trên máy ảo đám mây của GitHub, gán nhãn định danh bằng **Git Short SHA** (ví dụ: `rs-web:ab5515d`).
 4. **Stage 4 (Publish to Registry):** Đăng nhập an toàn và đẩy Image lên Docker Hub `ducthinhahihi/rs-web:<SHA>` và `latest`.

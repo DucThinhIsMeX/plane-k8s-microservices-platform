@@ -242,14 +242,46 @@ File workflow [.github/workflows/ci-cd.yml](file:///c:/Users/Duc%20Thinh/Documen
 
 ---
 
-### 🏁 Chặng 6: Kiến trúc Lưu trữ Bền vững (Stateful Storage với PV / PVC) (100% Hoàn thành)
-* **Cài đặt Dynamic Storage Provisioner:** Tích hợp **Rancher Local Path Provisioner** ([k8s/01-configs/local-path-storage.yaml](file:///c:/Users/Duc%20Thinh/Documents/Học%20tập/Đồ%20án%20chuyên%20ngành/robot-shop-devops-lab/k8s/01-configs/local-path-storage.yaml)) làm `StorageClass` mặc định (`local-path`).
-* **Gắn PVC bảo toàn dữ liệu:**
-  * **MongoDB:** Gắn PVC `mongodb-pvc` (2 GiB) vào `/data/db`.
-  * **MySQL:** Gắn PVC `mysql-pvc` (2 GiB) vào `/var/lib/mysql`.
-  * **Redis:** Gắn PVC `redis-pvc` (1 GiB) vào `/data`.
-* **Chiến lược cập nhật an toàn:** Sử dụng `strategy: type: Recreate` để ngăn chặn lỗi tranh chấp ổ cứng `Multi-Attach Error`.
-* **Kết quả:** Đảm bảo dữ liệu người dùng và đơn hàng không bao giờ bị mất kể cả khi Pod bị xóa hoặc khởi động lại.
+### 🏁 Chặng 6: Kiến trúc Lưu trữ Bền vững Động (Dynamic Stateful Storage với Rancher Local Path Provisioner & PVC) (100% Hoàn thành)
+
+* **Vấn đề đặt ra & Lý do lựa chọn Rancher Local Path Provisioner:**
+  * *Nhược điểm của `hostPath` truyền thống:* Việc khai báo `hostPath` thủ công đòi hỏi kỹ sư phải tự SSH lên từng máy chủ Worker, tạo thư mục cứng `/data/db`, cấp quyền `chmod 777` và viết file `PersistentVolume (PV)` tĩnh. Cách làm này không chuẩn Cloud-Native, dễ sai sót và gây xung đột dữ liệu.
+  * *Giải pháp Rancher Local Path:* Dự án đã triển khai **Rancher Local Path Provisioner** ([k8s/01-configs/local-path-storage.yaml](file:///c:/Users/Duc%20Thinh/Documents/Học%20tập/Đồ%20án%20chuyên%20ngành/robot-shop-devops-lab/k8s/01-configs/local-path-storage.yaml)) làm `StorageClass` mặc định (`local-path`). Đây là giải pháp cấp phát ổ đĩa tự động (**Dynamic Volume Provisioning**) siêu nhẹ, tối ưu tài nguyên và không bị phụ thuộc vào AWS EBS CSI Driver (vốn thường xuyên bị lỗi hết hạn IAM Role token trong môi trường AWS Academy).
+
+* **Sơ đồ Chu trình Cấp phát Ổ đĩa Tự động:**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Pod as 📦 Stateful Pod (MongoDB / MySQL / Redis)
+    participant PVC as 📑 PersistentVolumeClaim (local-path)
+    participant Prov as 🤖 Rancher Local Path Provisioner
+    participant Node as 🖥️ Worker Node (/opt/local-path-provisioner/)
+
+    Pod->>PVC: Yêu cầu ổ đĩa lưu trữ (ReadWriteOnce)
+    Note over PVC,Prov: Cơ chế WaitForFirstConsumer:<br/>Chờ K8s Scheduler chọn Worker Node
+    Prov->>Node: Scheduler quyết định đặt Pod lên k8s-worker-1!
+    Prov->>Node: Bật helper-pod tạo thư mục: /opt/local-path-provisioner/pvc-UUID
+    Prov-->>PVC: Tự động sinh ra PV và chuyển trạng thái sang "Bound" (Gắn kết)
+    Node-->>Pod: Mount thư mục vật lý vào container (/data/db hoặc /var/lib/mysql)
+    Note over Pod: Dữ liệu ghi vào CSDL được lưu thẳng xuống ổ cứng máy vật lý
+```
+
+* **Nguyên lý Hoạt động Chuyên sâu (Under The Hood):**
+  1. **Cơ chế `volumeBindingMode: WaitForFirstConsumer`:** StorageClass không cấp phát ổ đĩa ngay khi có PVC, mà chờ Kubernetes Scheduler phân tích tài nguyên và quyết định Pod sẽ nằm trên Node nào (`worker-1` hay `worker-2`). Khi Node được chọn, Provisioner mới kích hoạt cấp phát đúng tại Node đó.
+  2. **Tự động khởi tạo qua Helper Pod (Busybox):** Provisioner tự động bật một container phụ để thực thi script:
+     ```sh
+     mkdir -m 0777 -p /opt/local-path-provisioner/pvc-<UUID>_<namespace>_<pvc-name>
+     ```
+     Đồng thời tự động tạo đối tượng `PersistentVolume (PV)` trên K8s và gán cờ `Bound` với PVC tương ứng.
+  3. **Bảo tồn Dữ liệu Đa tầng (Polyglot Persistence):**
+     * **MongoDB:** Gắn PVC `mongodb-pvc` (2 GiB) vào `/data/db` $\rightarrow$ bảo toàn dữ liệu danh mục robot và người dùng.
+     * **MySQL:** Gắn PVC `mysql-pvc` (2 GiB) vào `/var/lib/mysql` $\rightarrow$ bảo toàn dữ liệu đơn hàng và đánh giá sản phẩm.
+     * **Redis:** Gắn PVC `redis-pvc` (1 GiB) vào `/data` $\rightarrow$ bảo toàn phiên giỏ hàng của khách hàng.
+  4. **Chiến lược Cập nhật An toàn (`strategy: type: Recreate`):**
+     * Vì chế độ truy cập là `ReadWriteOnce` (chỉ 1 Pod được đọc/ghi tại 1 thời điểm).
+     * Khi cập nhật phiên bản CSDL, Kubernetes sẽ tắt Pod cũ trước để nhả khóa thư mục, sau đó Pod mới khởi động lại và mount vào đúng thư mục cũ trên máy chủ vật lý, loại bỏ 100% lỗi tranh chấp ổ cứng **Multi-Attach Error**.
+* **Kết quả:** Đảm bảo dữ liệu người dùng và đơn hàng không bao giờ bị mất kể cả khi Pod bị xóa, crash, hoặc tái khởi động cụm.
 
 ---
 

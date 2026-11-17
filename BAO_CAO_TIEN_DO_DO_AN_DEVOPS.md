@@ -253,18 +253,23 @@ File workflow [.github/workflows/ci-cd.yml](file:///c:/Users/Duc%20Thinh/Documen
 
 ---
 
-### 🏁 Chặng 7: Tự động Co giãn Chịu tải (Horizontal Pod Autoscaler - HPA v2 cho 8/8 Microservices) & Thử nghiệm Bắn tải (100% Hoàn thành)
+### 🏁 Chặng 7: Tự động Co giãn Chịu tải (HPA v2 cho 8/8 Microservices) & Chuẩn hóa High Availability Doanh nghiệp (100% Hoàn thành)
+* **Chuẩn hóa Kiến trúc High Availability (HA) & True Load Balancing theo Tiêu chuẩn Doanh nghiệp:**
+  * **Quy chuẩn Production ("One is none, two is one"):** Trong môi trường doanh nghiệp thực tế, các dịch vụ nghiệp vụ (Stateless Microservices) tuyệt đối không bao giờ chạy 1 Pod vì sẽ tạo ra điểm nghẽn đơn độc (**Single Point of Failure - SPOF**). Dự án đã chuẩn hóa cấu hình mặc định duy trì **tối thiểu 2 Pods (`minReplicas: 2`)** cho toàn bộ 8 stateless microservices (`web`, `cart`, `catalogue`, `user`, `shipping`, `payment`, `ratings`, `dispatch`).
+  * **Cân bằng tải thực thụ (True Load Balancing):** Thay vì dồn 100% tải vào 1 container, Kubernetes Service và `kube-proxy` áp dụng cơ chế Round-Robin phân phối đều 50% - 50% lượng request của khách hàng sang 2 Pods rải trên 2 Worker Nodes (`k8s-worker-1` và `k8s-worker-2`).
+  * **Triển khai Không gián đoạn (Zero-Downtime Deployment):** Khi chu trình CI/CD GitOps đẩy phiên bản mới, Kubernetes áp dụng chiến lược Rolling Update: luôn giữ ít nhất 1 Pod cũ đang phục vụ trong lúc Pod mới khởi động, loại bỏ hoàn toàn nguy cơ website bị chớp lỗi `502 Bad Gateway`.
+  * **Phân tách rủi ro kiến trúc:** Tăng 2 Pods cho tầng Stateless, nhưng giữ nguyên `replicas: 1` cho 4 hệ CSDL Stateful (`mongodb`, `mysql`, `redis`, `rabbitmq`) nhằm bảo vệ tính toàn vẹn dữ liệu trên ổ đĩa PVC `local-path` (ReadWriteOnce).
 * **Khai báo HPA v2 chuẩn hóa ([K8s/06-scaling/hpa.yaml](file:///c:/Users/Duc%20Thinh/Documents/Học%20tập/Đồ%20án%20chuyên%20ngành/robot-shop-devops-lab/K8s/06-scaling/hpa.yaml)):**
   * Triển khai đồng loạt cơ chế tự động co giãn cho **toàn bộ 8 Stateless Microservices**: `web`, `cart`, `catalogue`, `user`, `shipping`, `payment`, `ratings`, `dispatch`.
-  * **Ngưỡng kích hoạt:** Tự động tăng Pod khi CPU trung bình vượt quá **40% - 50%**.
-  * **Phạm vi co giãn:** Tối thiểu 1 Pod, tối đa 5 Pods cho mỗi dịch vụ.
+  * **Ngưỡng kích hoạt:** Tự động tăng thêm Pod khi CPU trung bình vượt quá **40% - 50%**.
+  * **Phạm vi co giãn:** Tối thiểu 2 Pods (`minReplicas: 2`), tối đa 5 Pods (`maxReplicas: 5`) cho mỗi dịch vụ.
   * **Chính sách co giãn thông minh (Scaling Behavior):**
     * *Scale-up:* `stabilizationWindowSeconds: 0` — phản ứng tức thì, thêm Pod ngay khi có đột biến lưu lượng truy cập nhằm chống nghẽn cổ chai.
     * *Scale-down:* `stabilizationWindowSeconds: 60` — hạ Pod từ từ, tránh hiện tượng co giật tài nguyên (Pod Flapping).
 * **Công cụ thử nghiệm tải thực tế ([K8s/06-scaling/load-gen.yaml](file:///c:/Users/Duc%20Thinh/Documents/Học%20tập/Đồ%20án%20chuyên%20ngành/robot-shop-devops-lab/K8s/06-scaling/load-gen.yaml)):**
-  * Tích hợp công cụ Locust tạo tải động (mô phỏng hành vi hàng ngàn người dùng thêm giỏ hàng, tra cứu sản phẩm, thanh toán), cho phép sinh viên demo trực tiếp trước giảng viên quá trình Pod tự động nhân rộng từ 1 lên 3 hoặc 5 Pods theo thời gian thực.
+  * Tích hợp công cụ Locust tạo tải động (mô phỏng hành vi hàng ngàn người dùng thêm giỏ hàng, tra cứu sản phẩm, thanh toán), cho phép sinh viên demo trực tiếp trước giảng viên quá trình Pod tự động nhân rộng từ 2 lên 3, 4 hoặc 5 Pods theo thời gian thực.
 * **Xử lý xung đột GitOps kinh điển giữa ArgoCD và HPA:**
-  * *Vấn đề phát sinh:* Khi HPA tăng số Pod từ 1 lên 3 hoặc 5, ArgoCD kích hoạt tính năng `selfHeal` và cưỡng chế xóa Pod mới để đưa số lượng về 1 theo khai báo trong file manifest trên Git.
+  * *Vấn đề phát sinh:* Khi HPA tăng số Pod từ 2 lên 5, ArgoCD kích hoạt tính năng `selfHeal` và cưỡng chế xóa Pod mới để đưa số lượng về giá trị khai báo trên Git.
   * *Giải pháp:* Cấu hình `ignoreDifferences` trong [K8s/99-argocd/application.yaml](file:///c:/Users/Duc%20Thinh/Documents/Học%20tập/Đồ%20án%20chuyên%20ngành/robot-shop-devops-lab/K8s/99-argocd/application.yaml) đối với đường dẫn `/spec/replicas` của `apps/Deployment`. Kết quả: HPA có toàn quyền điều khiển số lượng Pod theo tải thực tế mà ArgoCD vẫn giữ trạng thái xanh lá `Synced & Healthy`.
 
 ---
@@ -273,11 +278,11 @@ File workflow [.github/workflows/ci-cd.yml](file:///c:/Users/Duc%20Thinh/Documen
 
 | Thành phần | Công nghệ / Nền tảng | Trạng thái hiện tại | Địa chỉ truy cập / Endpoint |
 | :--- | :--- | :---: | :--- |
-| **Ứng dụng Web Store** | Node.js + AngularJS + Nginx | 🟢 Active (1/1 đến 5/5) | `http://robot-shop-dev-nlb-9a767acfbcc2572c.elb.us-east-1.amazonaws.com` (Cổng 80) hoặc `<worker-ip>:30080` |
+| **Ứng dụng Web Store** | Node.js + AngularJS + Nginx | 🟢 Active (2/2 đến 5/5) | `http://robot-shop-dev-nlb-9a767acfbcc2572c.elb.us-east-1.amazonaws.com` (Cổng 80) hoặc `<worker-ip>:30080` |
 | **Hệ thống Quản trị** | **Rancher Dashboard v2.9** | 🟢 Active (1/1) | `https://54.147.44.217/dashboard` |
 | **Hệ thống GitOps CD** | **ArgoCD v2.12** | 🟢 Synced & Healthy | `https://robot-shop-dev-nlb-9a767acfbcc2572c.elb.us-east-1.amazonaws.com:30085` |
 | **Quy trình CI Thông minh** | **GitHub Actions (Matrix CI/CD)** | 🟢 Hoàn thành (Run #6 Pass) | Tab Actions trên GitHub Repository |
-| **Tự động Co giãn (HPA)** | **Kubernetes HPA v2** | 🟢 8/8 HPA Active | Tự động tăng giảm 1-5 Pods theo tải CPU (40%-50%) |
+| **Tự động Co giãn (HPA)** | **Kubernetes HPA v2** | 🟢 8/8 HPA Active | Tự động tăng giảm 2-5 Pods theo tải CPU (40%-50%) |
 | **Công cụ Tạo tải (Load Test)**| **Locust (Python Load Generator)**| 🟢 Sẵn sàng demo | Triển khai qua `K8s/06-scaling/load-gen.yaml` |
 | **Kho Image** | **Docker Hub** (`ducthinhahihi`) | 🟢 10/10 Images live | `hub.docker.com/u/ducthinhahihi` |
 | **Lưu trữ Bền vững CSDL** | **PV / PVC / Rancher Local Path** | 🟢 3/3 PVCs Bound | `mongodb-pvc`, `mysql-pvc`, `redis-pvc` |

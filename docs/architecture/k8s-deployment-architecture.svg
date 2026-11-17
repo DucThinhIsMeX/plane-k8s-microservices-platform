@@ -1,0 +1,276 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 860" width="100%" height="100%" style="background-color: #0d1117; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="nlbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF9900" />
+      <stop offset="100%" stop-color="#E07A00" />
+    </linearGradient>
+    <linearGradient id="ingressGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00A4D6" />
+      <stop offset="100%" stop-color="#027399" />
+    </linearGradient>
+    <linearGradient id="webGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="svcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#4F46E5" />
+    </linearGradient>
+    <linearGradient id="nodeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1F2937" />
+      <stop offset="100%" stop-color="#111827" />
+    </linearGradient>
+    <linearGradient id="podGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#1D4ED8" />
+    </linearGradient>
+    <linearGradient id="dbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D97706" />
+      <stop offset="100%" stop-color="#B45309" />
+    </linearGradient>
+
+    <!-- Filter Shadow -->
+    <filter id="dropShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Title Banner -->
+  <rect x="25" y="20" width="1050" height="60" rx="10" fill="#161B22" stroke="#30363D" stroke-width="1.5"/>
+  <text x="550" y="45" fill="#58A6FF" font-size="19" font-weight="bold" text-anchor="middle">KIẾN TRÚC MẠNG VÀ PHÂN BỔ ĐIỀU PHỐI PODS TRONG CỤM KUBERNETES</text>
+  <text x="550" y="66" fill="#8B949E" font-size="13" text-anchor="middle">Hệ thống Stan's Robot Shop | Cụm K8s v1.31 (1 Master, 2 Workers) trên AWS Multi-tier VPC</text>
+
+  <!-- External Traffic Source -->
+  <g transform="translate(425, 95)">
+    <rect width="250" height="38" rx="8" fill="#1F2937" stroke="#4B5563" stroke-width="1.5" filter="url(#dropShadow)"/>
+    <text x="125" y="24" fill="#F9FAFB" font-size="13" font-weight="bold" text-anchor="middle">🌐 Internet Client (HTTP / HTTPS)</text>
+  </g>
+
+  <!-- Down Arrow from Internet to NLB -->
+  <line x1="550" y1="133" x2="550" y2="153" stroke="#FF9900" stroke-width="3" stroke-dasharray="4,4"/>
+  <polygon points="545,153 555,153 550,160" fill="#FF9900"/>
+
+  <!-- AWS Cloud Perimeter Box -->
+  <rect x="25" y="160" width="1050" height="680" rx="14" fill="#0D1117" stroke="#30363D" stroke-width="2"/>
+  <rect x="35" y="170" width="220" height="26" rx="6" fill="#21262D"/>
+  <text x="45" y="188" fill="#FF9900" font-size="12" font-weight="bold">☁️ AWS Cloud (us-east-1 VPC)</text>
+
+  <!-- Public Subnet Box -->
+  <rect x="40" y="205" width="1020" height="75" rx="10" fill="#161B22" stroke="#FF9900" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <text x="55" y="224" fill="#FF9900" font-size="12" font-weight="bold">🟢 Public Subnet (10.0.1.0/24) - AWS DMZ</text>
+
+  <!-- NLB Box -->
+  <g transform="translate(375, 222)">
+    <rect width="350" height="46" rx="8" fill="url(#nlbGrad)" filter="url(#dropShadow)"/>
+    <text x="175" y="23" fill="#FFFFFF" font-size="14" font-weight="bold" text-anchor="middle">⚖️ AWS Network Load Balancer (NLB)</text>
+    <text x="175" y="39" fill="#FFFBEB" font-size="11" text-anchor="middle">Port 80 (Web), Port 443 (HTTPS), Port 30085 (ArgoCD)</text>
+  </g>
+
+  <!-- Down Arrow from NLB to Private Subnet K8s Cluster -->
+  <line x1="550" y1="280" x2="550" y2="305" stroke="#38BDF8" stroke-width="3"/>
+  <polygon points="545,305 555,305 550,313" fill="#38BDF8"/>
+  <text x="558" y="298" fill="#38BDF8" font-size="11">Forward to Ingress (Port 80)</text>
+
+  <!-- Private Subnet Box (Kubernetes Cluster) -->
+  <rect x="40" y="315" width="1020" height="515" rx="12" fill="#161B22" stroke="#38BDF8" stroke-width="2"/>
+  <rect x="50" y="325" width="290" height="26" rx="6" fill="#1E293B"/>
+  <text x="60" y="342" fill="#38BDF8" font-size="12" font-weight="bold">🔒 Private Subnet - Kubernetes Cluster</text>
+
+  <!-- Traefik Ingress Controller -->
+  <g transform="translate(360, 345)">
+    <rect width="380" height="42" rx="8" fill="url(#ingressGrad)" filter="url(#dropShadow)"/>
+    <text x="190" y="21" fill="#FFFFFF" font-size="13" font-weight="bold" text-anchor="middle">🚪 Traefik Ingress Controller</text>
+    <text x="190" y="36" fill="#E0F2FE" font-size="10.5" text-anchor="middle">Host: / (Prefix) ➔ Backend Service: web:8080</text>
+  </g>
+
+  <!-- Arrow Ingress -> Web Service -->
+  <line x1="550" y1="387" x2="550" y2="407" stroke="#10B981" stroke-width="2.5"/>
+  <polygon points="546,407 554,407 550,413" fill="#10B981"/>
+
+  <!-- Service Web (NodePort & ClusterIP) -->
+  <g transform="translate(380, 415)">
+    <rect width="340" height="42" rx="8" fill="url(#webGrad)" filter="url(#dropShadow)"/>
+    <text x="170" y="21" fill="#FFFFFF" font-size="13" font-weight="bold" text-anchor="middle">🔀 Kubernetes Service: web</text>
+    <text x="170" y="36" fill="#D1FAE5" font-size="10.5" text-anchor="middle">Port: 8080 | NodePort: 30080 | Selector: app=web</text>
+  </g>
+
+  <!-- Web API Gateway Routing Hub -->
+  <line x1="430" y1="457" x2="260" y2="480" stroke="#6366F1" stroke-width="1.8"/>
+  <line x1="550" y1="457" x2="550" y2="480" stroke="#6366F1" stroke-width="1.8"/>
+  <line x1="670" y1="457" x2="840" y2="480" stroke="#6366F1" stroke-width="1.8"/>
+
+  <!-- Microservice Services (L4 K8s Services Layer) -->
+  <g transform="translate(60, 482)">
+    <!-- Service Catalogue -->
+    <g transform="translate(0, 0)">
+      <rect width="130" height="34" rx="6" fill="#312E81" stroke="#6366F1" stroke-width="1.2"/>
+      <text x="65" y="17" fill="#E0E7FF" font-size="11" font-weight="bold" text-anchor="middle">Svc: catalogue</text>
+      <text x="65" y="29" fill="#A5B4FC" font-size="9" text-anchor="middle">Port 8080</text>
+    </g>
+    <!-- Service Cart -->
+    <g transform="translate(145, 0)">
+      <rect width="125" height="34" rx="6" fill="#312E81" stroke="#6366F1" stroke-width="1.2"/>
+      <text x="62" y="17" fill="#E0E7FF" font-size="11" font-weight="bold" text-anchor="middle">Svc: cart</text>
+      <text x="62" y="29" fill="#A5B4FC" font-size="9" text-anchor="middle">Port 8080</text>
+    </g>
+    <!-- Service User -->
+    <g transform="translate(285, 0)">
+      <rect width="125" height="34" rx="6" fill="#312E81" stroke="#6366F1" stroke-width="1.2"/>
+      <text x="62" y="17" fill="#E0E7FF" font-size="11" font-weight="bold" text-anchor="middle">Svc: user</text>
+      <text x="62" y="29" fill="#A5B4FC" font-size="9" text-anchor="middle">Port 8080</text>
+    </g>
+    <!-- Service Payment -->
+    <g transform="translate(425, 0)">
+      <rect width="130" height="34" rx="6" fill="#312E81" stroke="#6366F1" stroke-width="1.2"/>
+      <text x="65" y="17" fill="#E0E7FF" font-size="11" font-weight="bold" text-anchor="middle">Svc: payment</text>
+      <text x="65" y="29" fill="#A5B4FC" font-size="9" text-anchor="middle">Port 8080</text>
+    </g>
+    <!-- Service Shipping -->
+    <g transform="translate(570, 0)">
+      <rect width="130" height="34" rx="6" fill="#312E81" stroke="#6366F1" stroke-width="1.2"/>
+      <text x="65" y="17" fill="#E0E7FF" font-size="11" font-weight="bold" text-anchor="middle">Svc: shipping</text>
+      <text x="65" y="29" fill="#A5B4FC" font-size="9" text-anchor="middle">Port 8080</text>
+    </g>
+    <!-- Service Ratings -->
+    <g transform="translate(715, 0)">
+      <rect width="125" height="34" rx="6" fill="#312E81" stroke="#6366F1" stroke-width="1.2"/>
+      <text x="62" y="17" fill="#E0E7FF" font-size="11" font-weight="bold" text-anchor="middle">Svc: ratings</text>
+      <text x="62" y="29" fill="#A5B4FC" font-size="9" text-anchor="middle">Port 80</text>
+    </g>
+    <!-- Service Dispatch -->
+    <g transform="translate(855, 0)">
+      <rect width="125" height="34" rx="6" fill="#312E81" stroke="#6366F1" stroke-width="1.2"/>
+      <text x="62" y="17" fill="#E0E7FF" font-size="11" font-weight="bold" text-anchor="middle">Svc: dispatch</text>
+      <text x="62" y="29" fill="#A5B4FC" font-size="9" text-anchor="middle">Port 8080</text>
+    </g>
+  </g>
+
+  <!-- Worker Nodes Area (Physical EC2 Scheduling) -->
+  <g transform="translate(55, 535)">
+    <!-- Worker Node 1 -->
+    <rect x="0" y="0" width="480" height="275" rx="10" fill="url(#nodeGrad)" stroke="#3B82F6" stroke-width="1.8"/>
+    <rect x="10" y="8" width="220" height="24" rx="4" fill="#1E3A8A"/>
+    <text x="18" y="24" fill="#93C5FD" font-size="12" font-weight="bold">🖥️ k8s-worker-1 (10.0.11.21)</text>
+
+    <!-- Pods in Node 1 -->
+    <!-- Pod Web 1 -->
+    <rect x="15" y="42" width="135" height="42" rx="6" fill="#065F46" stroke="#10B981" stroke-width="1.2"/>
+    <text x="82" y="60" fill="#ECFDF5" font-size="11" font-weight="bold" text-anchor="middle">📦 Pod: web-1</text>
+    <text x="82" y="74" fill="#A7F3D0" font-size="9" text-anchor="middle">Nginx UI & Gateway</text>
+
+    <!-- Pod Catalogue 1 -->
+    <rect x="165" y="42" width="140" height="42" rx="6" fill="#1E40AF" stroke="#60A5FA" stroke-width="1.2"/>
+    <text x="235" y="60" fill="#EFF6FF" font-size="11" font-weight="bold" text-anchor="middle">📦 Pod: catalogue-1</text>
+    <text x="235" y="74" fill="#93C5FD" font-size="9" text-anchor="middle">Node.js API</text>
+
+    <!-- Pod Cart 1 -->
+    <rect x="320" y="42" width="145" height="42" rx="6" fill="#1E40AF" stroke="#60A5FA" stroke-width="1.2"/>
+    <text x="392" y="60" fill="#EFF6FF" font-size="11" font-weight="bold" text-anchor="middle">📦 Pod: cart-1</text>
+    <text x="392" y="74" fill="#93C5FD" font-size="9" text-anchor="middle">Node.js API</text>
+
+    <!-- Pod User 1 -->
+    <rect x="15" y="95" width="135" height="42" rx="6" fill="#1E40AF" stroke="#60A5FA" stroke-width="1.2"/>
+    <text x="82" y="113" fill="#EFF6FF" font-size="11" font-weight="bold" text-anchor="middle">📦 Pod: user-1</text>
+    <text x="82" y="127" fill="#93C5FD" font-size="9" text-anchor="middle">Node.js Auth</text>
+
+    <!-- Pod Ratings 1 -->
+    <rect x="165" y="95" width="140" height="42" rx="6" fill="#1E40AF" stroke="#60A5FA" stroke-width="1.2"/>
+    <text x="235" y="113" fill="#EFF6FF" font-size="11" font-weight="bold" text-anchor="middle">📦 Pod: ratings-1</text>
+    <text x="235" y="127" fill="#93C5FD" font-size="9" text-anchor="middle">PHP Service</text>
+
+    <!-- Pod Dispatch 1 -->
+    <rect x="320" y="95" width="145" height="42" rx="6" fill="#1E40AF" stroke="#60A5FA" stroke-width="1.2"/>
+    <text x="392" y="113" fill="#EFF6FF" font-size="11" font-weight="bold" text-anchor="middle">📦 Pod: dispatch-1</text>
+    <text x="392" y="127" fill="#93C5FD" font-size="9" text-anchor="middle">Golang Worker</text>
+
+    <!-- Stateful Datastores on Node 1 -->
+    <line x1="15" y1="150" x2="465" y2="150" stroke="#374151" stroke-width="1"/>
+    <text x="15" y="167" fill="#F59E0B" font-size="10.5" font-weight="bold">💾 Stateful Datastores & Local-Path Storage (PV/PVC):</text>
+
+    <!-- MongoDB Stateful Pod -->
+    <g transform="translate(25, 180)">
+      <rect width="200" height="75" rx="8" fill="#78350F" stroke="#F59E0B" stroke-width="1.5"/>
+      <text x="100" y="24" fill="#FEF3C7" font-size="12" font-weight="bold" text-anchor="middle">🗄️ Pod: mongodb</text>
+      <text x="100" y="43" fill="#FDE68A" font-size="10" text-anchor="middle">Port 27017 | Database: robots</text>
+      <rect x="20" y="50" width="160" height="18" rx="4" fill="#451A03"/>
+      <text x="100" y="63" fill="#FBBF24" font-size="9.5" text-anchor="middle">PVC: mongodb-pvc (2Gi)</text>
+    </g>
+
+    <!-- Redis Stateful Pod -->
+    <g transform="translate(255, 180)">
+      <rect width="200" height="75" rx="8" fill="#78350F" stroke="#F59E0B" stroke-width="1.5"/>
+      <text x="100" y="24" fill="#FEF3C7" font-size="12" font-weight="bold" text-anchor="middle">⚡ Pod: redis</text>
+      <text x="100" y="43" fill="#FDE68A" font-size="10" text-anchor="middle">Port 6379 | In-memory Cache</text>
+      <rect x="20" y="50" width="160" height="18" rx="4" fill="#451A03"/>
+      <text x="100" y="63" fill="#FBBF24" font-size="9.5" text-anchor="middle">PVC: redis-pvc (1Gi)</text>
+    </g>
+
+
+    <!-- Worker Node 2 -->
+    <g transform="translate(510, 0)">
+      <rect x="0" y="0" width="480" height="275" rx="10" fill="url(#nodeGrad)" stroke="#3B82F6" stroke-width="1.8"/>
+      <rect x="10" y="8" width="220" height="24" rx="4" fill="#1E3A8A"/>
+      <text x="18" y="24" fill="#93C5FD" font-size="12" font-weight="bold">🖥️ k8s-worker-2 (10.0.11.22)</text>
+
+      <!-- Pods in Node 2 -->
+      <!-- Pod Web 2 (Scaled by HPA) -->
+      <rect x="15" y="42" width="135" height="42" rx="6" fill="#065F46" stroke="#34D399" stroke-width="1.4" stroke-dasharray="4,2"/>
+      <text x="82" y="60" fill="#ECFDF5" font-size="11" font-weight="bold" text-anchor="middle">📦 Pod: web-2 (HPA)</text>
+      <text x="82" y="74" fill="#6EE7B7" font-size="9" text-anchor="middle">⚡ Auto-scaled Pod</text>
+
+      <!-- Pod Catalogue 2 (Scaled by HPA) -->
+      <rect x="165" y="42" width="140" height="42" rx="6" fill="#1E40AF" stroke="#93C5FD" stroke-width="1.4" stroke-dasharray="4,2"/>
+      <text x="235" y="60" fill="#EFF6FF" font-size="11" font-weight="bold" text-anchor="middle">📦 catalogue-2 (HPA)</text>
+      <text x="235" y="74" fill="#BFDBFE" font-size="9" text-anchor="middle">⚡ Auto-scaled Pod</text>
+
+      <!-- Pod Cart 2 (Scaled by HPA) -->
+      <rect x="320" y="42" width="145" height="42" rx="6" fill="#1E40AF" stroke="#93C5FD" stroke-width="1.4" stroke-dasharray="4,2"/>
+      <text x="392" y="60" fill="#EFF6FF" font-size="11" font-weight="bold" text-anchor="middle">📦 cart-2 (HPA)</text>
+      <text x="392" y="74" fill="#BFDBFE" font-size="9" text-anchor="middle">⚡ Auto-scaled Pod</text>
+
+      <!-- Pod Payment 1 -->
+      <rect x="15" y="95" width="135" height="42" rx="6" fill="#1E40AF" stroke="#60A5FA" stroke-width="1.2"/>
+      <text x="82" y="113" fill="#EFF6FF" font-size="11" font-weight="bold" text-anchor="middle">📦 Pod: payment-1</text>
+      <text x="82" y="127" fill="#93C5FD" font-size="9" text-anchor="middle">Python Flask/uWSGI</text>
+
+      <!-- Pod Shipping 1 -->
+      <rect x="165" y="95" width="140" height="42" rx="6" fill="#1E40AF" stroke="#60A5FA" stroke-width="1.2"/>
+      <text x="235" y="113" fill="#EFF6FF" font-size="11" font-weight="bold" text-anchor="middle">📦 Pod: shipping-1</text>
+      <text x="235" y="127" fill="#93C5FD" font-size="9" text-anchor="middle">Java Spring Boot</text>
+
+      <!-- Empty / HPA standby slots -->
+      <rect x="320" y="95" width="145" height="42" rx="6" fill="#111827" stroke="#4B5563" stroke-width="1" stroke-dasharray="3,3"/>
+      <text x="392" y="113" fill="#9CA3AF" font-size="11" text-anchor="middle">📦 HPA Standby Slot</text>
+      <text x="392" y="127" fill="#6B7280" font-size="9" text-anchor="middle">Max 5 Replicas</text>
+
+      <!-- Stateful Datastores on Node 2 -->
+      <line x1="15" y1="150" x2="465" y2="150" stroke="#374151" stroke-width="1"/>
+      <text x="15" y="167" fill="#F59E0B" font-size="10.5" font-weight="bold">💾 Stateful Datastores & Local-Path Storage (PV/PVC):</text>
+
+      <!-- MySQL Stateful Pod -->
+      <g transform="translate(25, 180)">
+        <rect width="200" height="75" rx="8" fill="#78350F" stroke="#F59E0B" stroke-width="1.5"/>
+        <text x="100" y="24" fill="#FEF3C7" font-size="12" font-weight="bold" text-anchor="middle">🗄️ Pod: mysql</text>
+        <text x="100" y="43" fill="#FDE68A" font-size="10" text-anchor="middle">Port 3306 | DB: cities / ratings</text>
+        <rect x="20" y="50" width="160" height="18" rx="4" fill="#451A03"/>
+        <text x="100" y="63" fill="#FBBF24" font-size="9.5" text-anchor="middle">PVC: mysql-pvc (2Gi)</text>
+      </g>
+
+      <!-- RabbitMQ Stateful Pod -->
+      <g transform="translate(255, 180)">
+        <rect width="200" height="75" rx="8" fill="#78350F" stroke="#F59E0B" stroke-width="1.5"/>
+        <text x="100" y="24" fill="#FEF3C7" font-size="12" font-weight="bold" text-anchor="middle">🐰 Pod: rabbitmq</text>
+        <text x="100" y="43" fill="#FDE68A" font-size="10" text-anchor="middle">AMQP 5672 | Management 15672</text>
+        <rect x="20" y="50" width="160" height="18" rx="4" fill="#451A03"/>
+        <text x="100" y="63" fill="#FBBF24" font-size="9.5" text-anchor="middle">Message Broker / Queue</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Criss-cross Dynamic Load Balancing Indicator -->
+  <g transform="translate(480, 520)">
+    <rect width="140" height="24" rx="12" fill="#1F2937" stroke="#60A5FA" stroke-width="1.2"/>
+    <text x="70" y="16" fill="#93C5FD" font-size="10" font-weight="bold" text-anchor="middle">⇄ Multi-Node LB &amp; HPA</text>
+  </g>
+</svg>

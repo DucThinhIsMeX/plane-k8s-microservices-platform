@@ -13,6 +13,8 @@
 
 ## 1. TỔNG QUAN KIẾN TRÚC HỆ THỐNG ĐÃ XÂY DỰNG
 
+### 1.1. Kiến trúc Tổng thể Chu trình DevOps & Hạ tầng AWS Cloud
+
 Hệ thống được thiết kế và triển khai hoàn chỉnh theo mô hình **Cloud-Native & GitOps Enterprise**, kết hợp giữa nền tảng điều phối container hàng đầu (**Kubernetes**), hệ thống quản trị trực quan (**Rancher Dashboard**), và chu trình tự động hóa khép kín (**GitHub Actions CI + ArgoCD GitOps CD**).
 
 ```mermaid
@@ -70,6 +72,94 @@ flowchart TB
     Worker1 --- Storage_Layer
     Worker2 --- Storage_Layer
 ```
+
+---
+
+### 1.2. Mô hình Triển khai Mạng & Điều phối Pods trong Cụm Kubernetes (Kubernetes Ingress & Multi-Node Pod Architecture)
+
+Mô hình triển khai chi tiết bên trong Cụm Kubernetes mô phỏng chuẩn xác kiến trúc điều hướng lưu lượng tầng L7 (Ingress $\rightarrow$ Service $\rightarrow$ Multi-Node Pods), kết hợp mô hình **API Gateway Pattern** và **Tự động co giãn Pods (HPA)** trên các máy chủ tính toán (**Worker Nodes**):
+
+![Sơ đồ Kiến trúc Triển khai Kubernetes](docs/architecture/k8s-deployment-architecture.svg)
+
+```mermaid
+flowchart TB
+    Client["🌐 Internet Traffic / Người dùng"] -->|Cổng 80 HTTP / 443 HTTPS| NLB["⚖️ AWS Network Load Balancer (NLB)\n(Public Subnet)"]
+
+    subgraph K8s_Cluster ["☸️ Kubernetes Cluster (Private Subnet - VXLAN Calico CNI)"]
+        NLB -->|Chuyển tiếp L7| Ingress["🚪 Traefik Ingress Controller\n(networking.k8s.io/v1)"]
+        
+        Ingress -->|Path: / (Prefix)| Svc_Web["🔀 Service: web\n(NodePort 30080 / Port 8080)"]
+
+        subgraph Layer_Gateway ["🌐 Tầng API Gateway & Reverse Proxy (Nginx)"]
+            Svc_Web --> Pod_Web1["📦 Pod web-1\n(Worker 1)"]
+            Svc_Web --> Pod_Web2["📦 Pod web-2\n(Worker 2 - HPA)"]
+        end
+
+        subgraph Core_Services ["⚙️ Tầng Dịch vụ Nghiệp vụ (Kubernetes Services Layer)"]
+            Svc_Cat["🔀 Svc: catalogue (:8080)"]
+            Svc_Cart["🔀 Svc: cart (:8080)"]
+            Svc_User["🔀 Svc: user (:8080)"]
+            Svc_Pay["🔀 Svc: payment (:8080)"]
+            Svc_Ship["🔀 Svc: shipping (:8080)"]
+            Svc_Rate["🔀 Svc: ratings (:80)"]
+            Svc_Disp["🔀 Svc: dispatch (:8080)"]
+        end
+
+        Pod_Web1 -->|/api/catalogue/| Svc_Cat
+        Pod_Web1 -->|/api/cart/| Svc_Cart
+        Pod_Web1 -->|/api/user/| Svc_User
+        Pod_Web1 -->|/api/payment/| Svc_Pay
+        Pod_Web1 -->|/api/shipping/| Svc_Ship
+        Pod_Web1 -->|/api/ratings/| Svc_Rate
+
+        subgraph Worker_Nodes ["🖥️ Phân bổ Pods trên các Máy chủ Worker Nodes (High Availability)"]
+            subgraph Node1 ["k8s-worker-1 (10.0.11.21)"]
+                Pod_Web1
+                Pod_Cat1["📦 catalogue Pod 1"]
+                Pod_Cart1["📦 cart Pod 1"]
+                Pod_User1["📦 user Pod 1"]
+                Pod_Rate1["📦 ratings Pod 1"]
+                Pod_Disp1["📦 dispatch Pod 1"]
+                Pod_Mongo[("💾 mongodb Pod\n(mongodb-pvc 2Gi)")]
+                Pod_Redis[("⚡ redis Pod\n(redis-pvc 1Gi)")]
+            end
+
+            subgraph Node2 ["k8s-worker-2 (10.0.11.22)"]
+                Pod_Web2
+                Pod_Cat2["📦 catalogue Pod 2 (HPA)"]
+                Pod_Cart2["📦 cart Pod 2 (HPA)"]
+                Pod_Pay1["📦 payment Pod 1"]
+                Pod_Ship1["📦 shipping Pod 1"]
+                Pod_MySQL[("🗄️ mysql Pod\n(mysql-pvc 2Gi)")]
+                Pod_Rabbit[("📬 rabbitmq Pod\n(Message Broker)")]
+            end
+        end
+
+        %% Điều phối cân bằng tải liên Node (Cross-Node Load Balancing)
+        Svc_Cat -->|Round-Robin| Pod_Cat1
+        Svc_Cat -->|Round-Robin| Pod_Cat2
+        Svc_Cart -->|Round-Robin| Pod_Cart1
+        Svc_Cart -->|Round-Robin| Pod_Cart2
+        Svc_Pay --> Pod_Pay1
+        Svc_Ship --> Pod_Ship1
+
+        %% Giao tiếp CSDL & Lưu trữ
+        Pod_Cat1 -.-> Pod_Mongo
+        Pod_Cat2 -.-> Pod_Mongo
+        Pod_Cart1 -.-> Pod_Redis
+        Pod_Cart2 -.-> Pod_Redis
+        Pod_Ship1 -.-> Pod_MySQL
+        Pod_Pay1 -.-> Pod_Rabbit
+    end
+```
+
+#### Phân tích Chi tiết Cơ chế Điều phối Lưu lượng:
+1. **Cổng vào Đám mây (AWS NLB):** Đón toàn bộ traffic Internet tại Public Subnet và phân phối an toàn vào các cổng của cụm K8s nằm trong Private Subnet (chống tấn công trực tiếp vào máy chủ).
+2. **Ingress Controller (Traefik):** Hoạt động ở tầng L7 (HTTP/HTTPS), tiếp nhận request gửi tới domain/IP và định tuyến theo luật Ingress ([K8s/05-ingress/ingress.yaml](file:///c:/Users/Duc%20Thinh/Documents/Học%20tập/Đồ%20án%20chuyên%20ngành/robot-shop-devops-lab/K8s/05-ingress/ingress.yaml)) vào Service `web`.
+3. **Mô hình API Gateway & Path-based Routing:** Pod `web` đóng vai trò kép: vừa phân phối giao diện tĩnh (HTML/AngularJS), vừa là API Gateway (Nginx Reverse Proxy) phân giải các URL có tiền tố `/api/<service>/` tới các K8s ClusterIP Services tương ứng.
+4. **Cân bằng tải Đa Node (Multi-Node Load Balancing):** Các Kubernetes Services sử dụng iptables/IPVS để cân bằng tải (Round-Robin) tới các Pod nằm rải rác trên cả 2 máy chủ `k8s-worker-1` và `k8s-worker-2`. Điều này đảm bảo tính sẵn sàng cao (**High Availability**): nếu một worker gặp sự cố, worker còn lại vẫn duy trì ứng dụng bình thường.
+5. **Cơ chế Co giãn Tự động (Horizontal Pod Autoscaler - HPA v2):** Khi lưu lượng người dùng tăng cao, HPA tự động nhân rộng số lượng Pod từ 1 lên đến 5 Pods và phân bổ đồng đều lên các Node, ngăn chặn tắc nghẽn cục bộ.
+6. **Lưu trữ Trạng thái Bền vững (Stateful Storage):** Các cơ sở dữ liệu (`mongodb`, `mysql`, `redis`) được gắn kết với Persistent Volume Claims (PVC) thông qua Rancher Local-Path Provisioner, đảm bảo an toàn dữ liệu kể cả khi Pod bị tái khởi động.
 
 ---
 

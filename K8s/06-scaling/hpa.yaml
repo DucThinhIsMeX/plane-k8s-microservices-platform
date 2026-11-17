@@ -17,7 +17,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: web
-  minReplicas: 1
+  minReplicas: 2
   maxReplicas: 5
   metrics:
   - type: Resource
@@ -58,7 +58,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: cart
-  minReplicas: 1
+  minReplicas: 2
   maxReplicas: 5
   metrics:
   - type: Resource
@@ -99,7 +99,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: catalogue
-  minReplicas: 1
+  minReplicas: 2
   maxReplicas: 5
   metrics:
   - type: Resource
@@ -140,7 +140,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: user
-  minReplicas: 1
+  minReplicas: 2
   maxReplicas: 5
   metrics:
   - type: Resource
@@ -181,7 +181,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: shipping
-  minReplicas: 1
+  minReplicas: 2
   maxReplicas: 5
   metrics:
   - type: Resource
@@ -222,7 +222,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: payment
-  minReplicas: 1
+  minReplicas: 2
   maxReplicas: 5
   metrics:
   - type: Resource
@@ -263,7 +263,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: ratings
-  minReplicas: 1
+  minReplicas: 2
   maxReplicas: 5
   metrics:
   - type: Resource
@@ -304,7 +304,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: dispatch
-  minReplicas: 1
+  minReplicas: 2
   maxReplicas: 5
   metrics:
   - type: Resource

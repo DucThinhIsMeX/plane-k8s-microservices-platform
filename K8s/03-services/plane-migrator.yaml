@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: plane-migrator
+  namespace: plane
+  labels:
+    app.kubernetes.io/name: plane-migrator
+    app.kubernetes.io/component: migration
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 5
+  template:
+    metadata:
+      labels:
+        app: plane-migrator
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrator
+          image: makeplane/plane-backend:v1.5.0
+          imagePullPolicy: IfNotPresent
+          command: ["./bin/docker-entrypoint-migrator.sh"]
+          envFrom:
+            - configMapRef:
+                name: plane-config
+            - secretRef:
+                name: plane-secret
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

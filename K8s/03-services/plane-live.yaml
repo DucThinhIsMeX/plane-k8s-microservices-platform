@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plane-live
+  namespace: plane
+  labels:
+    app.kubernetes.io/name: plane-live
+    app.kubernetes.io/component: realtime
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plane-live
+  template:
+    metadata:
+      labels:
+        app: plane-live
+    spec:
+      containers:
+        - name: live
+          image: makeplane/plane-live:v1.5.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              name: http-ws
+          envFrom:
+            - configMapRef:
+                name: plane-config
+            - secretRef:
+                name: plane-secret
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: plane-live
+  namespace: plane
+  labels:
+    app.kubernetes.io/name: plane-live
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: 3000
+      name: http-ws
+  selector:
+    app: plane-live

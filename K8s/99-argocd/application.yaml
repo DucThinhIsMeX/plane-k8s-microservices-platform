@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: robot-shop
+  name: plane-platform
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -10,21 +10,16 @@ spec:
   source:
     repoURL: https://github.com/DucThinhIsMeX/robot-shop-devops-lab.git
     targetRevision: main
-    path: K8s
+    path: k8s
     directory:
       recurse: true
   destination:
     server: https://kubernetes.default.svc
-    namespace: robot-shop
+    namespace: plane
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-  ignoreDifferences:
-    - group: apps
-      kind: Deployment
-      jsonPointers:
-        - /spec/replicas
-
+      - ApplyOutOfOrder=true

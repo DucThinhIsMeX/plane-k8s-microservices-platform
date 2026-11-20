@@ -1,25 +1,20 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: robot-shop-config
-  namespace: robot-shop
+  name: plane-config
+  namespace: plane
 data:
-  # Cấu hình địa chỉ host chuyển tiếp cho API Gateway (web)
-  CATALOGUE_HOST: "catalogue"
-  USER_HOST: "user"
-  CART_HOST: "cart"
-  SHIPPING_HOST: "shipping"
-  PAYMENT_HOST: "payment"
-  RATINGS_HOST: "ratings"
+  # Cấu hình địa chỉ truy cập ứng dụng
+  WEB_URL: "http://localhost"
+  NEXT_PUBLIC_API_BASE_URL: "http://localhost"
+  CORS_ALLOWED_ORIGINS: "*"
+  DEBUG: "0"
 
-  # Cấu hình kết nối giữa các microservices và database/queue
-  MONGO_URL: "mongodb://mongodb:27017/catalogue"
-  USER_MONGO_URL: "mongodb://mongodb:27017/users"
-  REDIS_HOST: "redis"
-  DB_HOST: "mysql"
-  CART_ENDPOINT: "cart:8080"
-  PDO_URL: "mysql:host=mysql;dbname=ratings;charset=utf8mb4"
-  CATALOGUE_URL: "http://catalogue:8080"
-  AMQP_HOST: "rabbitmq"
-  PAYMENT_GATEWAY: "http://catalogue:8080/health"
+  # Cấu hình Redis Cache & Celery Broker nội bộ trong cụm
+  REDIS_URL: "redis://plane-redis:6379/0"
+  CELERY_BROKER_URL: "redis://plane-redis:6379/1"
 
+  # Cấu hình Tầng Lưu trữ Đối tượng AWS S3 (Native PaaS)
+  AWS_REGION: "us-east-1"
+  AWS_S3_BUCKET_NAME: "plane-assets-store"
+  USE_MINIO: "0"

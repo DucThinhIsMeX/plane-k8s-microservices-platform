@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plane-beat
+  namespace: plane
+  labels:
+    app.kubernetes.io/name: plane-beat
+    app.kubernetes.io/component: cron-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plane-beat
+  template:
+    metadata:
+      labels:
+        app: plane-beat
+    spec:
+      containers:
+        - name: beat
+          image: makeplane/plane-backend:v1.5.0
+          imagePullPolicy: IfNotPresent
+          command: ["./bin/docker-entrypoint-beat.sh"]
+          envFrom:
+            - configMapRef:
+                name: plane-config
+            - secretRef:
+                name: plane-secret
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi

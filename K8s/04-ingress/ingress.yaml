@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: plane-ingress
+  namespace: plane
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  ingressClassName: traefik
+  rules:
+    - http:
+        paths:
+          # Định tuyến API backend Django
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: plane-api
+                port:
+                  number: 8000
+          # Định tuyến WebSocket realtime live collaboration
+          - path: /live
+            pathType: Prefix
+            backend:
+              service:
+                name: plane-live
+                port:
+                  number: 3000
+          # Định tuyến giao diện người dùng Next.js
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: plane-frontend
+                port:
+                  number: 3000

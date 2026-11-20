@@ -1,8 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: robot-shop
+  name: plane
   labels:
-    name: robot-shop
-    app.kubernetes.io/name: robot-shop
-
+    app.kubernetes.io/name: plane
+    app.kubernetes.io/part-of: plane-platform

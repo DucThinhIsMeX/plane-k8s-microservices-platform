@@ -9,8 +9,14 @@ variable "region" {
 }
 
 variable "az" {
-  description = "Availability Zone duy nhất"
+  description = "Availability Zone chính (AZ A)"
   type        = string
+}
+
+variable "az_b" {
+  description = "Availability Zone phụ cho RDS Subnet Group (AZ B)"
+  type        = string
+  default     = "us-east-1b"
 }
 
 variable "vpc_cidr" {
@@ -24,6 +30,12 @@ variable "public_subnet_cidr" {
 }
 
 variable "private_subnet_cidr" {
-  description = "CIDR private subnet"
+  description = "CIDR private subnet A"
   type        = string
+}
+
+variable "private_subnet_b_cidr" {
+  description = "CIDR private subnet B (cho RDS Multi-AZ Subnet Group)"
+  type        = string
+  default     = "10.0.12.0/24"
 }

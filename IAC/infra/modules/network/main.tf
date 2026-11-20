@@ -28,6 +28,14 @@ resource "aws_subnet" "private" {
   tags = { Name = "${var.name}-private-${var.az}" }
 }
 
+resource "aws_subnet" "private_b" {
+  vpc_id            = aws_vpc.this.id
+  cidr_block        = var.private_subnet_b_cidr
+  availability_zone = var.az_b
+
+  tags = { Name = "${var.name}-private-${var.az_b}" }
+}
+
 # Route table public: ra Internet qua IGW
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.this.id
@@ -53,6 +61,11 @@ resource "aws_route_table" "private" {
 
 resource "aws_route_table_association" "private" {
   subnet_id      = aws_subnet.private.id
+  route_table_id = aws_route_table.private.id
+}
+
+resource "aws_route_table_association" "private_b" {
+  subnet_id      = aws_subnet.private_b.id
   route_table_id = aws_route_table.private.id
 }
 

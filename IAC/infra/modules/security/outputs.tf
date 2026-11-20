@@ -13,3 +13,7 @@ output "k8s_sg_id" {
 output "rancher_sg_id" {
   value = aws_security_group.rancher.id
 }
+
+output "rds_sg_id" {
+  value = aws_security_group.rds.id
+}

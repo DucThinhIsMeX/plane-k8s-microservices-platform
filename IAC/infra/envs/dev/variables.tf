@@ -135,3 +135,41 @@ variable "ssh_private_key_path" {
   type        = string
   default     = "~/.ssh/labsuser.pem"
 }
+
+# ---------- AWS Native Services: RDS PostgreSQL & Subnet Group ----------
+variable "az_b" {
+  description = "AZ thứ 2 để tạo DB Subnet Group theo chuẩn RDS"
+  type        = string
+  default     = "us-east-1b"
+}
+
+variable "private_subnet_b_cidr" {
+  description = "Subnet B trong Private Zone cho RDS"
+  type        = string
+  default     = "10.0.12.0/24"
+}
+
+variable "db_name" {
+  description = "Tên cơ sở dữ liệu của Plane"
+  type        = string
+  default     = "plane"
+}
+
+variable "db_username" {
+  description = "Master username của RDS PostgreSQL"
+  type        = string
+  default     = "plane_admin"
+}
+
+variable "db_password" {
+  description = "Master password của RDS PostgreSQL"
+  type        = string
+  sensitive   = true
+  default     = "PlaneSecretPass2026!"
+}
+
+variable "db_instance_class" {
+  description = "Loại máy chủ cho AWS RDS"
+  type        = string
+  default     = "db.t3.micro"
+}

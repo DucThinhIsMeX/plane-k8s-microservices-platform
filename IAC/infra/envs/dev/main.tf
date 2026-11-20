@@ -34,12 +34,14 @@ locals {
 module "network" {
   source = "../../modules/network"
 
-  name                = local.name
-  region              = var.region
-  az                  = var.az
-  vpc_cidr            = var.vpc_cidr
-  public_subnet_cidr  = var.public_subnet_cidr
-  private_subnet_cidr = var.private_subnet_cidr
+  name                  = local.name
+  region                = var.region
+  az                    = var.az
+  az_b                  = var.az_b
+  vpc_cidr              = var.vpc_cidr
+  public_subnet_cidr    = var.public_subnet_cidr
+  private_subnet_cidr   = var.private_subnet_cidr
+  private_subnet_b_cidr = var.private_subnet_b_cidr
 }
 
 module "security" {
@@ -121,11 +123,26 @@ resource "aws_instance" "rancher" {
   }
 }
 
-# module "s3_backup" {
-#   source = "../../modules/s3-backup"
-# 
-#   bucket_name = "${local.name}-backup-${data.aws_caller_identity.current.account_id}"
-# }
+# ---------- AWS Native Services: Tầng Lưu trữ Stateful ----------
+module "rds" {
+  source = "../../modules/rds"
+
+  name               = local.name
+  subnet_ids         = module.network.private_subnet_ids
+  security_group_id  = module.security.rds_sg_id
+  instance_class     = var.db_instance_class
+  allocated_storage  = 20
+  db_name            = var.db_name
+  username           = var.db_username
+  password           = var.db_password
+}
+
+module "s3_plane" {
+  source = "../../modules/s3-plane"
+
+  bucket_name   = "${local.name}-plane-assets-${data.aws_caller_identity.current.account_id}"
+  force_destroy = true
+}
 
 module "secrets" {
   source = "../../modules/secrets"

@@ -140,3 +140,35 @@ resource "aws_vpc_security_group_egress_rule" "rancher_all" {
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
 }
+
+# ---------- RDS PostgreSQL Database ----------
+resource "aws_security_group" "rds" {
+  name        = "${var.name}-sg-rds"
+  description = "Security group cho AWS RDS PostgreSQL database"
+  vpc_id      = var.vpc_id
+  tags        = { Name = "${var.name}-sg-rds" }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "rds_from_k8s" {
+  security_group_id            = aws_security_group.rds.id
+  description                  = "PostgreSQL port 5432 tu cac pod tren K8s nodes"
+  referenced_security_group_id = aws_security_group.k8s.id
+  ip_protocol                  = "tcp"
+  from_port                    = 5432
+  to_port                      = 5432
+}
+
+resource "aws_vpc_security_group_ingress_rule" "rds_from_edge" {
+  security_group_id            = aws_security_group.rds.id
+  description                  = "PostgreSQL port 5432 tu Bastion/Edge de quan tri, migration"
+  referenced_security_group_id = aws_security_group.edge.id
+  ip_protocol                  = "tcp"
+  from_port                    = 5432
+  to_port                      = 5432
+}
+
+resource "aws_vpc_security_group_egress_rule" "rds_all" {
+  security_group_id = aws_security_group.rds.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "-1"
+}

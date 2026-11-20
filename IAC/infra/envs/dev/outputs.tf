@@ -31,9 +31,31 @@ output "argocd_url" {
   value       = "https://${module.nlb.dns_name}:30085"
 }
 
-# output "backup_bucket" {
-#   value = module.s3_backup.bucket_name
-# }
+# ---------- AWS Native Services Outputs (RDS & S3) ----------
+output "rds_endpoint" {
+  description = "Host va Port de ket noi ung dung toi AWS RDS PostgreSQL"
+  value       = module.rds.endpoint
+}
+
+output "rds_address" {
+  description = "Hostname cua RDS PostgreSQL"
+  value       = module.rds.address
+}
+
+output "rds_db_name" {
+  description = "Ten co so du lieu cua Plane tren RDS"
+  value       = module.rds.db_name
+}
+
+output "rds_username" {
+  description = "Master username cua RDS PostgreSQL"
+  value       = module.rds.username
+}
+
+output "s3_plane_assets_bucket" {
+  description = "S3 Bucket luu tru attachment, avatar va static assets cua Plane"
+  value       = module.s3_plane.bucket_name
+}
 
 output "secret_names" {
   value = module.secrets.secret_names

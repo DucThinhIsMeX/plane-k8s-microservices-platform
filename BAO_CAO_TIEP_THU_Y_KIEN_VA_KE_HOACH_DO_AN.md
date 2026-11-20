@@ -21,7 +21,7 @@ Trong môi trường doanh nghiệp hiện đại, hệ thống theo dõi tiến
 
 ---
 
-## 2. BÓC TÁCH KIẾN TRÚC MÃ NGUỒN PLANE (`makeplane/plane`)
+## 2. KIẾN TRÚC MÃ NGUỒN PLANE (`makeplane/plane`)
 
 Plane là nền tảng quản trị dự án mã nguồn mở hiện đại hàng đầu (hơn 33.000 stars trên GitHub), được phát triển theo mô hình vi dịch vụ phân tán. Việc phân tích bóc tách các thành phần nền tảng của Plane được xác định như sau:
 

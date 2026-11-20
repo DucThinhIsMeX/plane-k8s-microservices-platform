@@ -1,13 +1,43 @@
-# TÀI LIỆU KIẾN TRÚC TỔNG THỂ HỆ THỐNG CLOUD-NATIVE & GITOPS
+# BẢN THUYẾT MINH KIẾN TRÚC TỔNG THỂ HỆ THỐNG CLOUD-NATIVE & GITOPS
 
 > **Đề tài**: Thiết kế và Triển khai Nền tảng Cloud-Native & GitOps Vận hành Hệ thống Quản trị Dự án Phân tán (Plane) trên Nền tảng AWS và Kubernetes  
 > **Sinh viên thực hiện**: Nguyễn Đức Thịnh  
+> **Hệ thống ứng dụng demo**: Nền tảng quản trị công việc mã nguồn mở Plane (`makeplane/plane`)  
 
 ---
 
-## 1. SƠ ĐỒ KIẾN TRÚC TỔNG THỂ DUY NHẤT (MASTER ARCHITECTURE)
+## 1. BÀI TOÁN KỸ THUẬT TRỌNG TÂM (PROBLEM STATEMENT)
 
-Sơ đồ thể hiện bức tranh toàn cảnh tích hợp liền mạch giữa **Quy trình Tự động hóa GitOps (CI/CD)**, **Hạ tầng Mạng Đám mây AWS**, **Tầng Tính toán Phi trạng thái (Kubernetes)** và **Tầng Dữ liệu Có trạng thái (AWS Native PaaS)**:
+### 1.1. Bối cảnh Nghiệp vụ
+Trong môi trường doanh nghiệp hiện đại, hệ thống theo dõi tiến độ và quản lý dự án (Project Management & Issue Tracking) là dịch vụ cốt lõi hoạt động 24/7. Việc tự triển khai và vận hành (self-hosted) một hệ thống vi dịch vụ quy mô lớn đòi hỏi hạ tầng phải giải quyết triệt để 3 bài toán kỹ thuật:
+1. **Tính sẵn sàng cao (High Availability - HA)**: Đảm bảo hệ thống không có điểm nghẽn đơn lẻ (No Single Point of Failure - SPOF), duy trì dịch vụ liên tục ngay cả khi một máy chủ hoặc tiến trình gặp sự cố.
+2. **Khả năng co giãn tự động (Auto-scaling)**: Hệ thống phải tự động tăng giảm số lượng bản sao tính toán (Pods) tương ứng với lưu lượng người dùng thay đổi theo thời gian thực (giờ cao điểm và giờ thấp điểm).
+3. **Tách biệt dữ liệu và tính toán (Decoupled Compute & Storage)**: Toàn bộ dữ liệu quan trọng của doanh nghiệp không được lưu phụ thuộc vào vòng đời của các máy chủ tính toán tạm thời (ephemeral nodes), mà phải được bảo vệ bởi các dịch vụ lưu trữ chuyên dụng có độ bền cao và sao lưu tự động.
+4. **Tự động hóa triển khai an toàn (GitOps & DevSecOps)**: Loại bỏ hoàn toàn thao tác cấu hình thủ công dễ gây lỗi, tự động kiểm tra chất lượng mã nguồn, quét lỗ hổng bảo mật container trước khi phát hành, và đồng bộ cấu hình tự động.
+
+---
+
+## 2. BÓC TÁCH KIẾN TRÚC MÃ NGUỒN PLANE (`makeplane/plane`)
+
+Plane là nền tảng quản trị dự án mã nguồn mở hiện đại hàng đầu (hơn 33.000 stars trên GitHub), được phát triển theo mô hình vi dịch vụ phân tán. Việc phân tích bóc tách các thành phần nền tảng của Plane được xác định như sau:
+
+| Thành phần của Plane | Công nghệ nền tảng | Phân bổ tài nguyên | Vai trò kỹ thuật & Chức năng |
+| :--- | :--- | :--- | :--- |
+| **`plane-frontend`** | Next.js / React Router | **Kubernetes (Stateless)** | Giao diện người dùng Web, tối ưu SEO và Client-side rendering. Có thể co giãn độc lập (HPA). |
+| **`plane-api`** | Django REST Framework (Python) | **Kubernetes (Stateless)** | Xử lý toàn bộ logic nghiệp vụ (xác thực, phân quyền, CRUD dự án, task, issue). Có thể co giãn độc lập (HPA). |
+| **`plane-live`** | Node.js / Socket.IO | **Kubernetes (Stateless)** | Kết nối WebSocket thời gian thực, phục vụ tính năng cộng tác đa người dùng đồng thời trên bảng Kanban. |
+| **`plane-worker`** | Celery Worker (Python) | **Kubernetes (Stateless)** | Tiến trình xử lý tác vụ ngầm bất đồng bộ: gửi email thông báo, kích hoạt webhook, xử lý tệp nặng. |
+| **`plane-beat`** | Celery Beat (Python) | **Kubernetes (Stateless)** | Bộ điều phối lịch trình, kích hoạt các tác vụ định kỳ trong hệ thống. |
+| **`plane-migrator`** | Django DB Migrations | **Kubernetes (K8s Job)** | Tiến trình tự động kiểm tra và nâng cấp schema cơ sở dữ liệu trên RDS trước khi API tiếp nhận traffic. |
+| **`plane-redis`** | Redis In-memory | **Kubernetes (Stateless)** | Lưu phiên đăng nhập (Session Cache) và hàng đợi thông điệp (Celery Message Broker). |
+| **Cơ sở dữ liệu** | PostgreSQL 16.3 | **AWS RDS (Stateful PaaS)** | Lưu trữ dữ liệu quan hệ cốt lõi (Users, Workspaces, Projects, Issues). Tận dụng Multi-AZ và Automated Backups. |
+| **Lưu trữ tệp tin** | Object Storage API | **AWS S3 (Stateful PaaS)** | Lưu trữ hình ảnh đại diện, file đính kèm công việc, bản xuất báo cáo với độ bền 99.999999999% (11 số 9). |
+
+---
+
+## 3. SƠ ĐỒ KIẾN TRÚC TỔNG THỂ DUY NHẤT (MASTER ARCHITECTURE)
+
+Sơ đồ quy hoạch toàn bộ các thành phần công cụ, dịch vụ đám mây và luồng liên kết trong một bản vẽ duy nhất:
 
 ```mermaid
 flowchart TB
@@ -15,22 +45,27 @@ flowchart TB
     subgraph SEC_GITOPS[" 1. QUY TRÌNH TỰ ĐỘNG HÓA GITOPS (CI/CD & DEVSECOPS) "]
         direction TB
         DEV["👨‍💻 Kỹ sư DevOps / Developer"]
-        REPO_GIT["📦 GitHub Repository<br/>(Source Code & K8s Manifests)"]
+        REPO_APP["📦 GitHub Repo (Mã nguồn Ứng dụng)"]
+        REPO_GITOPS["⚙️ GitHub Repo (K8s Manifests GitOps)"]
 
-        subgraph SEC_CI[" Pipeline CI (GitHub Actions) "]
-            CI_LINT["Lint Python (apps/api)"]
+        subgraph SEC_CI[" Pipeline Continuous Integration (GitHub Actions) "]
+            CI_LINT["Lint Python Code (Flake8)"]
             CI_SEC["Trivy Security Scan<br/>(Quét lỗ hổng mã nguồn & Container)"]
-            CI_K8S_VAL["K8s Manifests YAML Validator"]
+            CI_BUILD["Build Multi-arch Docker Image"]
+            CI_REGISTRY[("Docker Hub / AWS ECR<br/>(Image Registry)")]
+            CI_UPDATE_TAG["Tự động cập nhật Image Tag sang GitOps Repo"]
         end
 
-        subgraph SEC_CD[" Pipeline CD (ArgoCD Pull-based GitOps) "]
+        subgraph SEC_CD[" Pipeline Continuous Delivery (ArgoCD GitOps) "]
             ARGOCD_CTRL["ArgoCD Controller<br/>(Lắng nghe nhánh main)"]
-            ARGOCD_SYNC["Tự động đồng bộ trạng thái mong muốn<br/>(Auto-Sync & Self-Heal)"]
+            ARGOCD_SYNC["Tự động đồng bộ trạng thái mong muốn<br/>(Auto-Sync & Self-Healing)"]
         end
 
-        DEV -->|git push| REPO_GIT
-        REPO_GIT --> CI_LINT --> CI_SEC --> CI_K8S_VAL
-        REPO_GIT -.->|Polling / Webhook| ARGOCD_CTRL
+        DEV -->|git push code| REPO_APP
+        REPO_APP --> CI_LINT --> CI_SEC --> CI_BUILD --> CI_REGISTRY
+        CI_BUILD --> CI_UPDATE_TAG
+        CI_UPDATE_TAG -->|commit tag| REPO_GITOPS
+        REPO_GITOPS -.->|Polling / Webhook| ARGOCD_CTRL
         ARGOCD_CTRL --> ARGOCD_SYNC
     end
 
@@ -44,13 +79,13 @@ flowchart TB
             RANCHER["Rancher Server VM (10.0.1.200)<br/>Web Dashboard quản trị cụm K8s"]
         end
 
-        subgraph PRIVATE_NET[" Vùng Mạng Nội Bộ (Private Subnets) - Tầng Tính Toán Stateless "]
+        subgraph PRIVATE_NET[" Vùng Mạng Nội Bộ (Private Subnets) - Tầng Tính Toán Phi Trạng Thái (Stateless) "]
             subgraph K8S_CLUSTER[" Cụm Kubernetes v1.31 (Compute Engine) "]
                 TRAEFIK["Traefik Ingress Controller"]
 
                 subgraph PODS_PLANE[" Microservices Plane (Stateless Compute) "]
-                    POD_FRONTEND["plane-frontend (Next.js Web)<br/>[HPA: 2 - 5 Replicas]"]
-                    POD_API["plane-api (Django REST Core)<br/>[HPA: 2 - 5 Replicas]"]
+                    POD_FRONTEND["plane-frontend (Next.js Web)<br/>[HPA Auto-scaling: 2 - 5 Pods]"]
+                    POD_API["plane-api (Django REST Core)<br/>[HPA Auto-scaling: 2 - 5 Pods]"]
                     POD_LIVE["plane-live (Node.js WebSocket)"]
                     POD_WORKER["plane-worker (Celery Async)"]
                     POD_BEAT["plane-beat (Celery Scheduler)"]
@@ -59,16 +94,17 @@ flowchart TB
 
                 POD_REDIS[("plane-redis<br/>(Session Cache & Queue)")]
                 ARGOCD_APP["ArgoCD Server & Agents"]
+                METRICS["Metrics-Server (K8s)"]
             end
         end
 
         subgraph PAAS_NET[" Vùng Dịch Vụ Nền Tảng Đám Mây (AWS PaaS - Stateful Datastores) "]
-            RDS_DB[("🗄️ AWS RDS PostgreSQL 16.3<br/>- Trải dài Private Subnets (Multi-AZ)<br/>- Automated Daily Backups & PITR<br/>- Storage Auto-scaling (20GB -> 50GB)")]
+            RDS_DB[("🗄️ AWS RDS PostgreSQL 16.3<br/>- DB Subnet Group (Multi-AZ: us-east-1a & 1b)<br/>- Automated Daily Backups & PITR<br/>- Storage Auto-scaling (20GB -> 50GB)")]
             S3_STORE["📦 AWS S3 Bucket<br/>- Lưu trữ tệp đính kèm, avatars<br/>- Độ bền 99.999999999% (11 số 9)<br/>- Mã hóa AES256 & CORS"]
         end
     end
 
-    %% ĐIỀU HƯỚNG LƯU LƯỢNG
+    %% ĐIỀU HƯỚNG LƯU LƯỢNG VÀ KẾT NỐI
     USERS["🌐 Người Dùng Doanh Nghiệp"] -->|HTTP / HTTPS| NLB
     NLB -->|Chuyển tiếp Port 80/443| TRAEFIK
     
@@ -77,14 +113,16 @@ flowchart TB
     TRAEFIK -->|Path: /live | POD_LIVE
 
     ARGOCD_SYNC ==>|Tự động triển khai Manifests| K8S_CLUSTER
+    METRICS -.->|Giám sát CPU/RAM| POD_FRONTEND
+    METRICS -.->|Kích hoạt co giãn| POD_API
 
     POD_FRONTEND <--> POD_API
     POD_LIVE <--> POD_API
     POD_API <--> POD_WORKER
 
-    POD_API -.->|Query & Lưu trữ dữ liệu quan hệ| RDS_DB
-    POD_MIGRATOR -.->|Chạy schema migration| RDS_DB
-    POD_API -.->|Upload/Tải file đính kèm trực tiếp| S3_STORE
+    POD_API -.->|Query & Lưu trữ dữ liệu nghiệp vụ| RDS_DB
+    POD_MIGRATOR -.->|Chạy schema migration tự động| RDS_DB
+    POD_API -.->|Upload/Tải file đính kèm qua Pre-signed URLs| S3_STORE
     POD_API -.->|Cache phiên & Đẩy tác vụ| POD_REDIS
     POD_WORKER -.->|Rút tác vụ bất đồng bộ| POD_REDIS
 
@@ -94,76 +132,99 @@ flowchart TB
 
 ---
 
-## 2. THUYẾT MINH MÔ TẢ CHI TIẾT SƠ ĐỒ KIẾN TRÚC
+## 4. PHÂN BỔ TÀI NGUYÊN VÀ THUYẾT MINH KIẾN TRÚC CLOUD-NATIVE
 
-Kiến trúc hệ thống được phân lớp rõ ràng thành **4 khối chức năng chính**, vận hành đồng bộ và bổ trợ lẫn nhau:
+Hệ thống được thiết kế theo đúng nguyên tắc chuẩn mực của Cloud-Native: **Tách biệt Tầng Tính toán Phi trạng thái và Tầng Dữ liệu Có trạng thái**.
 
-### 2.1. Khối 1: Quy trình Tự động hóa GitOps & DevSecOps (CI/CD)
-* **Mã nguồn tập trung (Single Source of Truth)**: Toàn bộ mã nguồn ứng dụng (`apps/`) và các khai báo trạng thái mong muốn của hạ tầng Kubernetes (`k8s/`) được quản lý tập trung trên GitHub Repository.
-* **Continuous Integration (CI) - GitHub Actions**:
-  1. *Linting*: Tự động phân tích chất lượng cú pháp mã nguồn Python của core backend (`apps/api`) nhằm ngăn ngừa lỗi logic trước khi đóng gói.
-  2. *Security Scanning*: Tích hợp công cụ **Trivy** tự động quét mã nguồn và dependencies để phát hiện các lỗ hổng bảo mật (CVEs) theo chuẩn DevSecOps.
-  3. *Manifests Validation*: Kiểm tra cú pháp YAML của toàn bộ Kubernetes manifests để đảm bảo không có sai sót cấu hình trước khi triển khai.
-* **Continuous Delivery (CD) - ArgoCD (Pull-based GitOps)**:
-  * ArgoCD Controller chạy thường trực bên trong cụm Kubernetes, liên tục giám sát nhánh `main` của repository.
-  * Khi có commit mới được phê duyệt, ArgoCD tự động kéo các manifests về và áp dụng xuống cụm (`Auto-Sync`).
-  * Cơ chế `Self-Healing`: Nếu phát hiện bất kỳ sự thay đổi cấu hình thủ công nào làm sai lệch trạng thái trên cluster, ArgoCD sẽ tự động điều chỉnh đưa hệ thống về đúng trạng thái khai báo trong Git.
+### 4.1. Tầng Tính toán Phi trạng thái (Stateless Compute - Kubernetes)
+* **Toàn bộ microservices của Plane** (`frontend`, `api`, `live`, `worker`, `beat`, `migrator`) được đóng gói thành container và triển khai trên các Worker Nodes đặt trong **Private Subnet**.
+* **Đặc tính Phi trạng thái**: Các Pod không lưu dữ liệu vĩnh viễn vào ổ cứng cục bộ. Nếu một Worker Node hoặc Pod bị lỗi, hệ thống tự động khởi tạo Pod thay thế mà không gây mất mát dữ liệu (Self-healing).
+* **Định tuyến Layer 7 (Traefik Ingress)**:
+  * Phân phối lưu lượng thông minh dựa trên URI path: `/` đưa về `plane-frontend`, `/api` đưa về `plane-api`, `/live` đưa về WebSocket `plane-live`.
 
----
+### 4.2. Tầng Dữ liệu Có trạng thái (Stateful Datastores - AWS Cloud PaaS)
+Nhóm không tự dựng database container trong Kubernetes mà sử dụng các dịch vụ nền tảng tích hợp sẵn của AWS:
+* **Cơ sở dữ liệu quan hệ (AWS RDS PostgreSQL 16.3)**:
+  * Nằm trong **DB Subnet Group** trải dài qua 2 Availability Zones (`us-east-1a` và `us-east-1b`), được bảo vệ bởi Security Group chỉ mở cổng 5432 cho các Worker Nodes.
+  * **Automated Backups & Point-in-Time Recovery (PITR)**: Sao lưu tự động liên tục, hỗ trợ phục hồi dữ liệu về từng giây chính xác khi có sự cố.
+  * **Storage Auto-scaling**: Khởi tạo 20 GB gp3 và tự động mở rộng lên tới 50 GB mà không gây downtime.
+* **Lưu trữ đối tượng (AWS S3 Bucket)**:
+  * Lưu trữ bền vững tài liệu đính kèm với độ bền **99.999999999% (11 số 9)**, không làm tiêu tốn dung lượng đĩa cứng của các Node K8s.
+  * Cấu hình **CORS** và mã hóa phía máy chủ **AES256**, cho phép tải tệp tin an toàn qua Pre-signed URLs.
 
-### 2.2. Khối 2: Hạ tầng Mạng & Vùng Truy Cập Công Khai (Public Zone - AWS Cloud)
-Toàn bộ hệ thống đặt trong một mạng ảo độc lập **AWS VPC (10.0.0.0/16)**:
-* **AWS Network Load Balancer (NLB)**:
-  * Là điểm tiếp nhận lưu lượng duy nhất từ Internet, phân phối lưu lượng vào các Worker Nodes trên các cổng 80 (HTTP), 443 (HTTPS) và 30085 (Giao diện ArgoCD).
-  * Khả năng xử lý hàng triệu request mỗi giây với độ trễ cực thấp (Ultra-low latency).
-* **Edge / Bastion Node (10.0.1.10)**:
-  * Đóng vai trò làm máy chủ trung gian (SSH Bastion) an toàn để kỹ sư DevOps truy cập vào mạng nội bộ.
-  * Tích hợp cơ chế **iptables NAT Gateway tự dựng** cho phép toàn bộ các máy chủ trong Private Subnet có thể tải bản vá, cài đặt gói từ Internet mà không cần phơi lộ địa chỉ IP Public ra ngoài.
-* **Rancher Server VM (10.0.1.200)**:
-  * Cung cấp Web UI dashboard tập trung để giám sát tài nguyên (CPU, RAM, Pods) và quản lý vòng đời cụm Kubernetes thông qua `cattle-cluster-agent`.
-
----
-
-### 2.3. Khối 3: Tầng Tính Toán Phi Trạng Thái Trên Kubernetes (Stateless Compute - Private Subnets)
-Tất cả các máy chủ K8s (1 Control Plane và 2 Worker Nodes) đều được đặt trong **Private Subnet** nhằm cách ly hoàn toàn khỏi các cuộc tấn công trực diện từ Internet:
-* **Traefik Ingress Controller**:
-  * Tiếp nhận lưu lượng từ NLB và thực hiện định tuyến Layer 7 dựa trên đường dẫn (Path-based Routing):
-    * Đường dẫn `/` $\to$ Chuyển tiếp tới giao diện Web Next.js (`plane-frontend`).
-    * Đường dẫn `/api` $\to$ Chuyển tiếp tới core API Django (`plane-api`).
-    * Đường dẫn `/live` $\to$ Chuyển tiếp WebSocket tới dịch vụ cộng tác (`plane-live`).
-* **Các Vi dịch vụ Stateless của Plane**:
-  * `plane-frontend`: Chạy giao diện React/Next.js phục vụ người dùng.
-  * `plane-api`: Xử lý toàn bộ logic dự án, phân quyền, workflow trạng thái công việc.
-  * `plane-live`: Duy trì kết nối WebSocket thời gian thực giữa các thành viên đang cùng chỉnh sửa bảng Kanban.
-  * `plane-worker` & `plane-beat`: Xử lý tác vụ ngầm (gửi email, webhook) và điều phối công việc định kỳ qua hàng đợi Celery.
-  * `plane-migrator`: K8s Job tự động chạy migrate cơ sở dữ liệu lên AWS RDS trước khi API bắt đầu nhận traffic.
-  * `plane-redis`: Bộ nhớ đệm in-memory phục vụ lưu phiên đăng nhập và hàng đợi tác vụ của Celery.
-* **Cơ chế Co Giãn Tự Động (Horizontal Pod Autoscaler - HPA)**:
-  * Cấu hình HPA cho cả `plane-frontend` và `plane-api` với ngưỡng co giãn từ **2 đến 5 Pods**. Khi tải CPU hoặc Memory vượt ngưỡng 70%–80%, Kubernetes sẽ tự động nhân bản thêm Pod để san sẻ tải; khi tải giảm, hệ thống tự động thu hồi Pod để tiết kiệm tài nguyên.
+### 4.3. Cơ chế Khả năng Sẵn Sàng Cao (HA), Cân Bằng Tải & Co Giãn Tự Động (HPA)
+* **Cân bằng tải nhiều lớp**:
+  * *Lớp ngoài cùng (Layer 4)*: **AWS Network Load Balancer (NLB)** phân phối lưu lượng vào các node worker với độ trễ siêu thấp.
+  * *Lớp ứng dụng (Layer 7)*: **Traefik Ingress Controller** cân bằng tải giữa các Pod backend.
+* **Co giãn Pod tự động (Horizontal Pod Autoscaler - HPA)**:
+  * Thu thập chỉ số tài nguyên qua `metrics-server`.
+  * Cấu hình HPA tự động tăng từ **2 lên tối đa 5 bản sao (Pods)** cho cả `plane-frontend` và `plane-api` khi mức sử dụng CPU vượt quá 70%–75% hoặc RAM vượt quá 80%. Khi tải giảm, HPA tự động thu hồi số lượng Pod về mức cơ bản để tối ưu chi phí.
 
 ---
 
-### 2.4. Khối 4: Tầng Dữ Liệu Có Trạng Thái Trên Nền Tảng Đám Mây (Stateful Datastores - AWS PaaS)
-Nhóm tách biệt hoàn toàn dữ liệu có trạng thái ra khỏi Kubernetes để tận dụng tối đa năng lực sẵn có của nhà cung cấp Cloud:
-* **AWS RDS PostgreSQL 16.3 (Managed Relational Database)**:
-  * Nằm trong **DB Subnet Group** trải dài qua 2 Availability Zones (`us-east-1a` và `us-east-1b`), được bảo vệ bởi Security Group riêng chỉ mở cổng `5432` cho K8s Nodes.
-  * **Automated Backups & Point-in-Time Recovery (PITR)**: Tự động sao lưu hàng ngày và hỗ trợ phục hồi dữ liệu về từng giây chính xác khi có sự cố.
-  * **Storage Auto-scaling**: Dung lượng ổ đĩa khởi tạo 20 GB gp3 và tự động mở rộng lên tới 50 GB mà không gây gián đoạn hoạt động của hệ thống (Zero Downtime).
-* **AWS S3 Bucket (Managed Object Storage)**:
-  * Lưu trữ bền vững toàn bộ hình ảnh, tài liệu đính kèm và file xuất báo cáo với độ bền dữ liệu **99.999999999% (11 số 9)**.
-  * Được thiết lập **CORS Rule** và mã hóa **AES256**, cho phép giao diện Web của Plane tải và hiển thị file đính kèm an toàn qua URL có chữ ký bảo mật (Pre-signed URLs) mà không tốn bất kỳ dung lượng ổ đĩa nào của máy chủ K8s.
+## 5. QUY TRÌNH GITOPS KHÉP KÍN (CI/CD)
+
+Quy trình phát triển và vận hành hệ thống được tự động hóa 100% theo mô hình **Declarative GitOps**:
+
+```
+[ Developer ] 
+      │ (git push)
+      ▼
+[ GitHub Repository ] ──> (Trigger) ──> [ Pipeline CI: GitHub Actions ]
+                                                │
+                                                ├── 1. Lint Code (Flake8)
+                                                ├── 2. Quét bảo mật (Trivy Scan)
+                                                ├── 3. Kiểm tra YAML (K8s Manifests)
+                                                ├── 4. Build Multi-arch Container
+                                                └── 5. Push Image Registry (Docker Hub)
+                                                            │
+                                                            ▼ (Update Image Tag)
+[ GitOps Manifests Repo ] <─────────────────────────────────┘
+      │
+      ▼ (Pull-based Sync)
+[ ArgoCD Controller (in K8s) ]
+      │
+      ▼ (Apply Desired State)
+[ Kubernetes Cluster (Plane Pods) ] (Zero Downtime Rolling Update)
+```
+
+1. **Continuous Integration (CI - GitHub Actions)**:
+   * **Kiểm tra chất lượng mã (Linting)**: Tự động chạy Flake8 kiểm tra cú pháp và chất lượng mã nguồn Python (`apps/api`).
+   * **Quét bảo mật tĩnh & Container (Trivy Scan)**: Rà quét lỗ hổng bảo mật (CVEs) trong mã nguồn và thư viện phụ thuộc trước khi đóng gói.
+   * **Kiểm thử cú pháp Manifests**: Tự động xác thực tính hợp lệ của toàn bộ file YAML trong thư mục `k8s/`.
+   * **Đóng gói & Phát hành**: Tự động build Docker Image và đẩy lên Image Registry (Docker Hub), sau đó cập nhật tag phiên bản mới vào kho GitOps.
+2. **Continuous Delivery (CD - ArgoCD Pull-based GitOps)**:
+   * ArgoCD Controller chạy thường trực trong cluster, định kỳ lắng nghe kho lưu trữ Git.
+   * Khi phát hiện thay đổi trên Git, ArgoCD tự động kéo cấu hình về và áp dụng xuống cụm (`Auto-Sync`).
+   * Bật cơ chế **Self-Healing**: Mọi thay đổi thủ công không thông qua Git trên cụm K8s đều bị ArgoCD tự động ghi đè về đúng trạng thái mong muốn (Desired State) đã khai báo.
 
 ---
 
-## 3. LUỒNG DỮ LIỆU END-TO-END GIỮA CÁC THÀNH PHẦN
+## 6. KẾ HOẠCH TRIỂN KHAI 4 TUẦN (ROADMAP HOÀN THÀNH ĐỒ ÁN)
 
-1. **Luồng Truy cập Người dùng (Client Traffic Flow)**:
-   $$\text{User} \xrightarrow{\text{HTTPS}} \text{AWS NLB} \xrightarrow{\text{Port 80/443}} \text{Traefik Ingress} \xrightarrow{\text{Path Routing}} \begin{cases} \text{plane-frontend (Path: /)} \\ \text{plane-api (Path: /api)} \\ \text{plane-live (Path: /live)} \end{cases}$$
+Lộ trình chi tiết phân bổ cho 4 tuần còn lại để đảm bảo tiến độ bảo vệ:
 
-2. **Luồng Lưu trữ & Dữ liệu Nghiệp vụ (Data Access Flow)**:
-   * Khi người dùng tạo hoặc cập nhật Task: `plane-api` thực thi câu lệnh SQL gửi trực tiếp tới **AWS RDS PostgreSQL** qua mạng riêng nội bộ.
-   * Khi người dùng đính kèm file/hình ảnh: `plane-api` khởi tạo liên kết Pre-signed URL và đẩy trực tiếp tệp tin lên **AWS S3 Bucket**.
-   * Khi có tác vụ gửi email hoặc cập nhật bảng Kanban: `plane-api` đẩy message vào `plane-redis`; `plane-worker` rút message ra để xử lý ngầm, giải phóng ngay phản hồi cho người dùng.
+```mermaid
+flowchart LR
+    W1["TUẦN 1 (Hiện tại):<br/>Chốt Kiến trúc & Chuẩn bị IaC"] --> W2["TUẦN 2:<br/>Triển khai Cụm AWS + K8s + PaaS"]
+    W2 --> W3["TUẦN 3:<br/>Hoàn thiện GitOps & Auto-scaling"]
+    W3 --> W4["TUẦN 4:<br/>Load Testing, Giám sát & Báo cáo"]
+```
 
-3. **Luồng Phát hành Tính năng & Tự động Triển khai (GitOps Release Flow)**:
-   $$\text{Developer} \xrightarrow{\text{git push}} \text{GitHub Repo} \xrightarrow{\text{Trigger}} \text{GitHub Actions CI (Lint + Trivy Scan)} \xrightarrow{\text{Verified}} \text{ArgoCD Pull Sync} \xrightarrow{\text{Apply State}} \text{K8s Pods (Zero Downtime)}$$
+* **Tuần 1 (Hiện tại - Chốt cuối tuần này)**:
+  * [x] Chốt mã nguồn mở **Plane** (`apps/`).
+  * [x] Bóc tách thành phần nền tảng và vẽ sơ đồ Master Architecture duy nhất.
+  * [x] Viết mới mã nguồn **Terraform** bổ sung module **AWS RDS PostgreSQL** và **AWS S3 Bucket** (Đã chạy `terraform validate` thành công 100%).
+  * [x] Hoàn thiện bộ manifests **Kubernetes GitOps** cho Plane trong thư mục `k8s/` và workflow GitHub Actions CI.
+* **Tuần 2: Triển khai Cụm Thực tế trên AWS Cloud**:
+  * Chạy `terraform apply` cấp phát toàn bộ VPC, EC2 K8s Nodes, NLB, RDS PostgreSQL và S3 Bucket.
+  * Chạy Ansible playbook cài đặt K8s v1.31, Traefik Ingress và kết nối Rancher Server Dashboard.
+  * Khởi chạy Plane, kết nối thành công với AWS RDS Postgres và tải thử nghiệm file đính kèm lên AWS S3.
+* **Tuần 3: Thiết lập Pipeline GitOps & Tự động Co giãn (HPA)**:
+  * Kết nối ArgoCD với Git repo, kiểm thử luồng cập nhật ứng dụng tự động khi có commit mới.
+  * Cấu hình và kích hoạt Horizontal Pod Autoscaler (HPA) cho `plane-frontend` và `plane-api`.
+  * Tích hợp Trivy quét lỗ hổng container tự động trong CI pipeline.
+* **Tuần 4: Đo lường Hiệu năng, Đánh giá Chịu tải & Hoàn thiện Luận văn**:
+  * Thực hiện kiểm thử chịu tải (Load Testing với công cụ k6 / Locust) mô phỏng 500 – 1.000 người dùng truy cập đồng thời để chứng minh tính năng Auto-scaling của K8s và độ ổn định của AWS RDS.
+  * Thu thập số liệu tài nguyên qua Prometheus & Grafana trên Rancher.
+  * Hoàn thiện toàn bộ báo cáo đồ án, slide thuyết trình và video demo hệ thống phục vụ buổi bảo vệ chính thức.

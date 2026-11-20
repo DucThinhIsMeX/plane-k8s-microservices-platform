@@ -1,8 +1,12 @@
 # BẢN THUYẾT MINH KIẾN TRÚC TỔNG THỂ HỆ THỐNG CLOUD-NATIVE & GITOPS
 
-> **Đề tài**: Thiết kế và Triển khai Nền tảng Cloud-Native & GitOps Vận hành Hệ thống Quản trị Dự án Phân tán (Plane) trên Nền tảng AWS và Kubernetes  
-> **Sinh viên thực hiện**: Nguyễn Đức Thịnh  
-> **Hệ thống ứng dụng demo**: Nền tảng quản trị công việc mã nguồn mở Plane (`makeplane/plane`)  
+> **Học phần**: NT114.R11 - Đồ án chuyên ngành (Học kỳ 1, Năm học 2026 - 2027)  
+> **Tên đề tài chính thức**: Nghiên cứu và xây dựng nền tảng vận hành ứng dụng microservices trên Kubernetes *(Building a Platform for Deploying and Operating Microservices on Kubernetes)*  
+> **Giảng viên hướng dẫn**: ThS. Văn Thiên Luân  
+> **Sinh viên thực hiện**:  
+> 1. **Đào Đức Thịnh** - MSSV: 23521495 *(Chủ nhiệm đề tài)*  
+> 2. **Nguyễn Bá Thiện** - MSSV: 23521480  
+> **Hệ thống ứng dụng demo**: Nền tảng quản trị công việc vi dịch vụ mã nguồn mở Plane (`makeplane/plane`)  
 
 ---
 
@@ -199,32 +203,3 @@ Quy trình phát triển và vận hành hệ thống được tự động hóa
    * Bật cơ chế **Self-Healing**: Mọi thay đổi thủ công không thông qua Git trên cụm K8s đều bị ArgoCD tự động ghi đè về đúng trạng thái mong muốn (Desired State) đã khai báo.
 
 ---
-
-## 6. KẾ HOẠCH TRIỂN KHAI 4 TUẦN (ROADMAP HOÀN THÀNH ĐỒ ÁN)
-
-Lộ trình chi tiết phân bổ cho 4 tuần còn lại để đảm bảo tiến độ bảo vệ:
-
-```mermaid
-flowchart LR
-    W1["TUẦN 1 (Hiện tại):<br/>Chốt Kiến trúc & Chuẩn bị IaC"] --> W2["TUẦN 2:<br/>Triển khai Cụm AWS + K8s + PaaS"]
-    W2 --> W3["TUẦN 3:<br/>Hoàn thiện GitOps & Auto-scaling"]
-    W3 --> W4["TUẦN 4:<br/>Load Testing, Giám sát & Báo cáo"]
-```
-
-* **Tuần 1 (Hiện tại - Chốt cuối tuần này)**:
-  * [x] Chốt mã nguồn mở **Plane** (`apps/`).
-  * [x] Bóc tách thành phần nền tảng và vẽ sơ đồ Master Architecture duy nhất.
-  * [x] Viết mới mã nguồn **Terraform** bổ sung module **AWS RDS PostgreSQL** và **AWS S3 Bucket** (Đã chạy `terraform validate` thành công 100%).
-  * [x] Hoàn thiện bộ manifests **Kubernetes GitOps** cho Plane trong thư mục `k8s/` và workflow GitHub Actions CI.
-* **Tuần 2: Triển khai Cụm Thực tế trên AWS Cloud**:
-  * Chạy `terraform apply` cấp phát toàn bộ VPC, EC2 K8s Nodes, NLB, RDS PostgreSQL và S3 Bucket.
-  * Chạy Ansible playbook cài đặt K8s v1.31, Traefik Ingress và kết nối Rancher Server Dashboard.
-  * Khởi chạy Plane, kết nối thành công với AWS RDS Postgres và tải thử nghiệm file đính kèm lên AWS S3.
-* **Tuần 3: Thiết lập Pipeline GitOps & Tự động Co giãn (HPA)**:
-  * Kết nối ArgoCD với Git repo, kiểm thử luồng cập nhật ứng dụng tự động khi có commit mới.
-  * Cấu hình và kích hoạt Horizontal Pod Autoscaler (HPA) cho `plane-frontend` và `plane-api`.
-  * Tích hợp Trivy quét lỗ hổng container tự động trong CI pipeline.
-* **Tuần 4: Đo lường Hiệu năng, Đánh giá Chịu tải & Hoàn thiện Luận văn**:
-  * Thực hiện kiểm thử chịu tải (Load Testing với công cụ k6 / Locust) mô phỏng 500 – 1.000 người dùng truy cập đồng thời để chứng minh tính năng Auto-scaling của K8s và độ ổn định của AWS RDS.
-  * Thu thập số liệu tài nguyên qua Prometheus & Grafana trên Rancher.
-  * Hoàn thiện toàn bộ báo cáo đồ án, slide thuyết trình và video demo hệ thống phục vụ buổi bảo vệ chính thức.

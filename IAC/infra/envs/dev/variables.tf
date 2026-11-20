@@ -1,6 +1,7 @@
 variable "project" {
-  type    = string
-  default = "robot-shop"
+  description = "Tên dự án đồ án chuyên ngành"
+  type        = string
+  default     = "plane"
 }
 
 variable "environment" {

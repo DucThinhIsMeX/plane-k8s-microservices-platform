@@ -25,8 +25,14 @@ variable "vpc_cidr" {
 }
 
 variable "public_subnet_cidr" {
-  description = "CIDR public subnet"
+  description = "CIDR public subnet A"
   type        = string
+}
+
+variable "public_subnet_b_cidr" {
+  description = "CIDR public subnet B cho EKS và Multi-AZ Load Balancers"
+  type        = string
+  default     = "10.0.2.0/24"
 }
 
 variable "private_subnet_cidr" {

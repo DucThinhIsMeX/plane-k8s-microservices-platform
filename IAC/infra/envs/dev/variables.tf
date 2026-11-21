@@ -59,6 +59,12 @@ variable "instance_profile_name" {
   default     = "LabInstanceProfile"
 }
 
+variable "lab_role_name" {
+  description = "IAM Role có sẵn trong Learner Lab cho EKS"
+  type        = string
+  default     = "LabRole"
+}
+
 variable "edge_instance_type" {
   type    = string
   default = "t3.small"

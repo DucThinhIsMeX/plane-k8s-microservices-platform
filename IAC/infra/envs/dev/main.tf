@@ -16,9 +16,13 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-# Learner Lab không cho tạo IAM role: dùng instance profile có sẵn
+# Learner Lab không cho tạo IAM role: dùng instance profile và LabRole có sẵn
 data "aws_iam_instance_profile" "lab" {
   name = var.instance_profile_name
+}
+
+data "aws_iam_role" "lab" {
+  name = var.lab_role_name
 }
 
 locals {
@@ -69,31 +73,46 @@ module "edge" {
   private_route_table_id = module.network.private_route_table_id
 }
 
-module "k8s_nodes" {
-  source = "../../modules/k8s-nodes"
+# ---------- AWS EKS: Managed Kubernetes Service ----------
+module "eks" {
+  source = "../../modules/eks"
 
-  name              = local.name
-  ami_id            = data.aws_ami.ubuntu.id
-  subnet_id         = module.network.private_subnet_id
-  security_group_id = module.security.k8s_sg_id
-  key_name          = var.key_name
-  instance_profile  = data.aws_iam_instance_profile.lab.name
-  nodes             = var.k8s_nodes
-
-  # Node cần NAT để tải gói ngay từ lần khởi động đầu
-  depends_on = [module.edge]
+  name                     = local.name
+  cluster_role_arn         = data.aws_iam_role.lab.arn
+  node_role_arn            = data.aws_iam_role.lab.arn
+  subnet_ids               = module.network.private_subnet_ids
+  control_plane_subnet_ids = module.network.all_subnet_ids
+  instance_types           = ["t3.medium"]
+  desired_size             = 2
+  min_size                 = 1
+  max_size                 = 3
 }
 
-module "nlb" {
-  source = "../../modules/nlb"
+# module "k8s_nodes" {
+#   source = "../../modules/k8s-nodes"
+# 
+#   name              = local.name
+#   ami_id            = data.aws_ami.ubuntu.id
+#   subnet_id         = module.network.private_subnet_id
+#   security_group_id = module.security.k8s_sg_id
+#   key_name          = var.key_name
+#   instance_profile  = data.aws_iam_instance_profile.lab.name
+#   nodes             = var.k8s_nodes
+# 
+#   # Node cần NAT để tải gói ngay từ lần khởi động đầu
+#   depends_on = [module.edge]
+# }
 
-  name                = local.name
-  vpc_id              = module.network.vpc_id
-  subnet_id           = module.network.public_subnet_id
-  security_group_id   = module.security.nlb_sg_id
-  worker_instance_ids = module.k8s_nodes.worker_instance_ids
-  listeners           = local.ingress_listeners
-}
+# module "nlb" {
+#   source = "../../modules/nlb"
+# 
+#   name                = local.name
+#   vpc_id              = module.network.vpc_id
+#   subnet_id           = module.network.public_subnet_id
+#   security_group_id   = module.security.nlb_sg_id
+#   worker_instance_ids = module.k8s_nodes.worker_instance_ids
+#   listeners           = local.ingress_listeners
+# }
 
 # Máy ảo Rancher Server đặt ở Public Subnet để người quản trị truy cập Web Dashboard
 resource "aws_instance" "rancher" {
@@ -151,26 +170,26 @@ module "secrets" {
   secrets = var.app_secrets
 }
 
-# Sinh inventory và ssh config cho Ansible
-resource "local_file" "ansible_inventory" {
-  filename        = "${path.root}/generated/inventory.ini"
-  file_permission = "0644"
-  content = templatefile("${path.root}/templates/inventory.ini.tftpl", {
-    edge_public_ip = module.edge.public_ip
-    masters        = module.k8s_nodes.masters
-    workers        = module.k8s_nodes.workers
-    ssh_user       = var.ssh_user
-    ssh_key_path   = var.ssh_private_key_path
-  })
-}
-
-resource "local_file" "ssh_config" {
-  filename        = "${path.root}/generated/ssh_config"
-  file_permission = "0644"
-  content = templatefile("${path.root}/templates/ssh_config.tftpl", {
-    edge_public_ip = module.edge.public_ip
-    nodes          = merge(module.k8s_nodes.masters, module.k8s_nodes.workers)
-    ssh_user       = var.ssh_user
-    ssh_key_path   = var.ssh_private_key_path
-  })
-}
+# Sinh inventory và ssh config cho Ansible (danh rieng cho mo hinh EC2 self-hosted)
+# resource "local_file" "ansible_inventory" {
+#   filename        = "${path.root}/generated/inventory.ini"
+#   file_permission = "0644"
+#   content = templatefile("${path.root}/templates/inventory.ini.tftpl", {
+#     edge_public_ip = module.edge.public_ip
+#     masters        = module.k8s_nodes.masters
+#     workers        = module.k8s_nodes.workers
+#     ssh_user       = var.ssh_user
+#     ssh_key_path   = var.ssh_private_key_path
+#   })
+# }
+# 
+# resource "local_file" "ssh_config" {
+#   filename        = "${path.root}/generated/ssh_config"
+#   file_permission = "0644"
+#   content = templatefile("${path.root}/templates/ssh_config.tftpl", {
+#     edge_public_ip = module.edge.public_ip
+#     nodes          = merge(module.k8s_nodes.masters, module.k8s_nodes.workers)
+#     ssh_user       = var.ssh_user
+#     ssh_key_path   = var.ssh_private_key_path
+#   })
+# }

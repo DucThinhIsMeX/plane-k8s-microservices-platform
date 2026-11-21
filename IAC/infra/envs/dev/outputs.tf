@@ -32,9 +32,15 @@ output "eks_update_kubeconfig_cmd" {
 #   value = module.k8s_nodes.workers
 # }
 
-output "docker_hub_namespace" {
-  description = "Docker Hub account chua image cua he thong"
-  value       = var.docker_hub_username
+# ---------- AWS ECR Outputs ----------
+output "ecr_registry" {
+  description = "Dia chi AWS ECR Registry de push docker images"
+  value       = module.ecr.registry
+}
+
+output "ecr_repositories" {
+  description = "Danh sach ECR Repository URLs cho tung microservice Plane"
+  value       = module.ecr.repository_urls
 }
 
 output "rancher_url" {

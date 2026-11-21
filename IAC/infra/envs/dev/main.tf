@@ -163,6 +163,14 @@ module "s3_plane" {
   force_destroy = true
 }
 
+# ---------- AWS Native Registry: Amazon ECR ----------
+module "ecr" {
+  source = "../../modules/ecr"
+
+  prefix       = local.name
+  repositories = ["plane-frontend", "plane-api", "plane-live", "plane-worker", "plane-beat", "plane-migrator"]
+}
+
 module "secrets" {
   source = "../../modules/secrets"
 

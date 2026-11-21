@@ -19,7 +19,7 @@ resource "aws_eks_cluster" "this" {
 
 resource "aws_eks_node_group" "this" {
   cluster_name    = aws_eks_cluster.this.name
-  node_group_name = "${var.name}-node-group"
+  node_group_name = "${var.name}-ng-v2"
   node_role_arn   = var.node_role_arn
   subnet_ids      = var.subnet_ids
 

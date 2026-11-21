@@ -7,5 +7,11 @@ resource "terraform_data" "s3_bucket" {
     command     = "aws s3api create-bucket --bucket ${var.bucket_name} --region us-east-1 2>$null; exit 0"
     interpreter = ["powershell", "-Command"]
   }
+
+  provisioner "local-exec" {
+    when        = destroy
+    command     = "aws s3 rb s3://${self.input} --force 2>$null; exit 0"
+    interpreter = ["powershell", "-Command"]
+  }
 }
 

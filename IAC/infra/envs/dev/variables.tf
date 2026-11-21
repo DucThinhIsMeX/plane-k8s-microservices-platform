@@ -117,17 +117,14 @@ variable "docker_hub_username" {
 }
 
 variable "app_secrets" {
-  description = "Tài khoản cơ sở dữ liệu và hàng đợi cần sinh mật khẩu"
+  description = "Tài khoản cơ sở dữ liệu và bí mật ứng dụng cần sinh mật khẩu"
   type = map(object({
     username    = string
     description = string
   }))
   default = {
-    mongodb        = { username = "admin", description = "Tai khoan quan tri MongoDB" }
-    mysql-root     = { username = "root", description = "Tai khoan root MySQL" }
-    mysql-shipping = { username = "shipping", description = "Tai khoan MySQL cua service shipping" }
-    mysql-ratings  = { username = "ratings", description = "Tai khoan MySQL cua service ratings" }
-    rabbitmq       = { username = "robotshop", description = "Tai khoan RabbitMQ cua payment va dispatch" }
+    plane-db         = { username = "plane_admin", description = "Tai khoan quan tri PostgreSQL tren Amazon RDS" }
+    plane-secret-key = { username = "plane", description = "Secret key va session salt cho Plane API" }
   }
 }
 

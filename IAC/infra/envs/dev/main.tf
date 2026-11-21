@@ -86,6 +86,8 @@ module "eks" {
   desired_size             = 2
   min_size                 = 1
   max_size                 = 3
+
+  depends_on = [module.edge]
 }
 
 # module "k8s_nodes" {

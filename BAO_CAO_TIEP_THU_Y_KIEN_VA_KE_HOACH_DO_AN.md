@@ -23,7 +23,10 @@ Hệ thống tập trung giải quyết bài toán vận hành nền tảng qu�
 
 ## 2. BÓC TÁCH KIẾN TRÚC MÃ NGUỒN PLANE VỚI HỆ SINH THÁI AWS NATIVE
 
-Ứng dụng thực nghiệm **Plane (`makeplane/plane`)** (hơn 33.000 stars trên GitHub) được quy hoạch bóc tách tương thích hoàn toàn với các dịch vụ chuyên dụng của AWS:
+* **Kho mã nguồn mở gốc (Plane HQ)**: [https://github.com/makeplane/plane](https://github.com/makeplane/plane) *(Hơn 33.000 stars trên GitHub - Nền tảng quản trị công việc và dự án mã nguồn mở hiện đại)*.
+* **Kho lưu trữ triển khai đồ án (DevOps Platform)**: [https://github.com/DucThinhIsMeX/plane-k8s-microservices-platform](https://github.com/DucThinhIsMeX/plane-k8s-microservices-platform).
+
+### 2.1. Bảng quy hoạch bóc tách thành phần với AWS Native Services
 
 | Thành phần của Plane | Công nghệ nền tảng | Dịch vụ AWS Native đảm nhiệm | Lợi thế kỹ thuật vượt trội |
 | :--- | :--- | :--- | :--- |
@@ -37,6 +40,75 @@ Hệ thống tập trung giải quyết bài toán vận hành nền tảng qu�
 | **Lưu trữ tệp tin & Media** | Object Storage API | **Amazon S3 Bucket** | Lưu trữ avatar, file đính kèm với độ bền 99.999999999% (11 số 9), tích hợp CORS và Pre-signed URLs. |
 | **Bảo mật & Credentials** | API Keys & DB Passwords | **AWS Secrets Manager** | Quản lý mật khẩu tập trung, mã hóa bằng AWS KMS, không lưu mật khẩu tĩnh trong mã nguồn. |
 | **Cân bằng tải & Ingress** | HTTP/HTTPS Traffic | **AWS Application Load Balancer (ALB)** | Cân bằng tải Layer 7 thông minh, định tuyến URL path (`/`, `/api`, `/live`), tích hợp SSL/TLS. |
+
+### 2.2. Sơ đồ luồng hoạt động tương tác giữa các vi dịch vụ (Service Interaction & Data Flow)
+
+Sơ đồ mô tả chi tiết cách thức các vi dịch vụ của Plane phối hợp vận hành và giao tiếp với các dịch vụ dữ liệu chuyên dụng của AWS:
+
+```mermaid
+flowchart LR
+    %% KHÁCH HÀNG TRUY CẬP
+    subgraph CLIENT_ZONE[" 🌐 TRÌNH DUYỆT NGƯỜI DÙNG "]
+        USER_UI["Người Dùng / Client Browser"]
+    end
+
+    %% TẦNG ĐIỀU HƯỚNG & CÂN BẰNG TẢI
+    subgraph INGRESS_LAYER[" 🔀 TẦNG CÂN BẰNG TẢI & ĐIỀU HƯỚNG (LAYER 7) "]
+        ALB["AWS Application Load Balancer (ALB)<br/>Định tuyến thông minh theo URI Path"]
+    end
+
+    %% TẦNG VI DỊCH VỤ TÍNH TOÁN TRÊN EKS
+    subgraph EKS_ZONE[" ☸️ TẦNG TÍNH TOÁN PHI TRẠNG THÁI (AMAZON EKS PODS) "]
+        direction TB
+        MIGRATOR["plane-migrator<br/>(K8s Pre-run Migration Job)"]
+        FE["plane-frontend<br/>(Next.js App Server)"]
+        API["plane-api<br/>(Django REST Framework Core)"]
+        LIVE["plane-live<br/>(Node.js WebSocket Gateway)"]
+        REDIS[("plane-redis<br/>(Session Cache, Broker & Pub/Sub)")]
+        BEAT["plane-beat<br/>(Celery Periodic Scheduler)"]
+        WORKER["plane-worker<br/>(Celery Async Tasks Worker)"]
+    end
+
+    %% TẦNG DỊCH VỤ DỮ LIỆU AWS NATIVE
+    subgraph AWS_PAAS[" ☁️ TẦNG DỊCH VỤ DỮ LIỆU NỀN TẢNG (AWS MANAGED PAAS) "]
+        direction TB
+        RDS[("🗄️ Amazon RDS PostgreSQL 16.3<br/>- Users, Workspaces, Projects, Issues<br/>- Multi-AZ High Availability & PITR")]
+        S3["📦 Amazon S3 Bucket<br/>- Avatars, Task Attachments, Document Exports<br/>- Độ bền 11 số 9 & Pre-signed URLs")]
+        SECRETS["🔐 AWS Secrets Manager<br/>- DB Credentials, Django Secret Keys, KMS")]
+    end
+
+    %% LUỒNG TRUY CẬP TỪ BROWSER
+    USER_UI -->|1. HTTP GET / | ALB
+    ALB -->|Chuyển tiếp cổng 3000| FE
+    FE -.->|Render HTML / Next.js Bundle| USER_UI
+
+    USER_UI -->|2. REST API Requests /api/* | ALB
+    ALB -->|Chuyển tiếp cổng 8000| API
+
+    USER_UI <-->|3. WebSocket WSS /live/* | ALB
+    ALB <-->|Duy trì kết nối thời gian thực cổng 3001| LIVE
+
+    %% LUỒNG KHỞI TẠO VÀ XÁC THỰC
+    MIGRATOR ==>|0. Khởi chạy Schema Migration tự động| RDS
+    API -.->|Đọc mật khẩu DB và Secret Key an toàn| SECRETS
+
+    %% LUỒNG NGHIỆP VỤ CỦA PLANE-API
+    API ==>|Truy vấn & Ghi nhận dữ liệu nghiệp vụ| RDS
+    API ==>|Cấp phát Pre-signed URL / Tải file| S3
+    API <-->|Lưu trữ Cache phiên & Rate Limiting| REDIS
+    API -->|Đẩy tác vụ nền vào hàng đợi Celery| REDIS
+    API -->|Publish sự kiện thay đổi dữ liệu| REDIS
+
+    %% LUỒNG TÁC VỤ NỀN CELERY
+    BEAT -->|Lên lịch các tác vụ định kỳ| REDIS
+    REDIS -->|Rút tác vụ bất đồng bộ| WORKER
+    WORKER ==>|Cập nhật kết quả tác vụ vào DB| RDS
+    WORKER ==>|Lưu file báo cáo export lên S3| S3
+
+    %% LUỒNG THỜI GIAN THỰC (REALTIME COLLABORATION)
+    REDIS -.->|Subscribe kênh sự kiện Pub/Sub| LIVE
+    LIVE -.->|Phát sóng cập nhật tức thì (Kanban boards, Tasks)| USER_UI
+```
 
 ---
 
@@ -91,6 +163,8 @@ flowchart TB
         subgraph PRIVATE_ZONE[" Vùng Mạng Nội Bộ (Private Subnets) - Tầng Tính Toán Phân Tán "]
             subgraph EKS_CLUSTER[" Cụm Amazon EKS v1.31 (Managed Kubernetes Cluster) "]
                 EKS_CP["AWS Managed EKS Control Plane<br/>(API Server, etcd, Scheduler do AWS vận hành 24/7)"]
+                ALB_CTRL["AWS Load Balancer Controller<br/>(Tự động quản lý Ingress & Target Groups)"]
+                METRICS["Metrics-Server<br/>(Thu thập tài nguyên Pods)"]
 
                 subgraph EKS_NODES[" EKS Managed Node Group (t3.medium Multi-AZ) "]
                     POD_FRONTEND["plane-frontend (Next.js Web)<br/>[HPA Auto-scaling: 2 - 5 Pods]"]
@@ -99,7 +173,7 @@ flowchart TB
                     POD_WORKER["plane-worker (Celery Async Tasks)"]
                     POD_BEAT["plane-beat (Celery Scheduler)"]
                     POD_MIGRATOR["plane-migrator (K8s Migration Job)"]
-                    POD_REDIS[("plane-redis (Cache & Queue)")]
+                    POD_REDIS[("plane-redis (Cache, Broker & Pub/Sub)")]
                     ARGOCD_APP["ArgoCD Server & Agents"]
                 end
             end
@@ -122,6 +196,9 @@ flowchart TB
     EKS_NODES -.->|Pull images bảo mật| ECR
 
     ARGOCD_SYNC ==>|Tự động áp dụng Manifests| EKS_NODES
+    ALB_CTRL -.->|Quản lý Target Groups cho Pods| ALB
+    METRICS -.->|Kích hoạt co giãn HPA| POD_FRONTEND
+    METRICS -.->|Kích hoạt co giãn HPA| POD_API
 
     POD_FRONTEND <--> POD_API
     POD_LIVE <--> POD_API
@@ -129,10 +206,14 @@ flowchart TB
 
     POD_API -.->|Query dữ liệu quan hệ| RDS_DB
     POD_MIGRATOR -.->|Chạy schema migration tự động| RDS_DB
+    POD_WORKER -.->|Cập nhật kết quả tác vụ nền| RDS_DB
+    POD_WORKER -.->|Lưu file export tài liệu| S3_STORE
     POD_API -.->|Tải/Upload file qua Pre-signed URLs| S3_STORE
     POD_API -.->|Lấy thông tin xác thực an toàn| SECRETS
-    POD_API -.->|Cache phiên & Đẩy tác vụ| POD_REDIS
+    POD_API <-->|Cache phiên & Đẩy tác vụ hàng đợi| POD_REDIS
+    POD_BEAT -.->|Lên lịch tác vụ định kỳ| POD_REDIS
     POD_WORKER -.->|Rút tác vụ bất đồng bộ| POD_REDIS
+    POD_LIVE <-->|Pub/Sub sự kiện WebSocket realtime| POD_REDIS
 
     RANCHER -.->|Cattle Agent giám sát EKS| EKS_CLUSTER
     BASTION -.->|Quản trị nội bộ an toàn| PRIVATE_ZONE

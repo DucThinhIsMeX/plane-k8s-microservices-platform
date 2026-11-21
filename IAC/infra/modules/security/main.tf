@@ -18,8 +18,8 @@ resource "aws_vpc_security_group_ingress_rule" "edge_ssh" {
 
 resource "aws_vpc_security_group_ingress_rule" "edge_nat" {
   security_group_id = aws_security_group.edge.id
-  description       = "Traffic tu private subnet di ra Internet qua NAT"
-  cidr_ipv4         = var.private_subnet_cidr
+  description       = "Traffic tu VPC di ra Internet qua NAT"
+  cidr_ipv4         = "10.0.0.0/16"
   ip_protocol       = "-1"
 }
 

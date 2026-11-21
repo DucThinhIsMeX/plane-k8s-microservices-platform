@@ -17,7 +17,24 @@ resource "aws_subnet" "public" {
   availability_zone       = var.az
   map_public_ip_on_launch = false
 
-  tags = { Name = "${var.name}-public-${var.az}" }
+  tags = {
+    Name                                           = "${var.name}-public-${var.az}"
+    "kubernetes.io/role/elb"                       = "1"
+    "kubernetes.io/cluster/${var.name}-eks"        = "shared"
+  }
+}
+
+resource "aws_subnet" "public_b" {
+  vpc_id                  = aws_vpc.this.id
+  cidr_block              = var.public_subnet_b_cidr
+  availability_zone       = var.az_b
+  map_public_ip_on_launch = false
+
+  tags = {
+    Name                                           = "${var.name}-public-${var.az_b}"
+    "kubernetes.io/role/elb"                       = "1"
+    "kubernetes.io/cluster/${var.name}-eks"        = "shared"
+  }
 }
 
 resource "aws_subnet" "private" {
@@ -25,7 +42,11 @@ resource "aws_subnet" "private" {
   cidr_block        = var.private_subnet_cidr
   availability_zone = var.az
 
-  tags = { Name = "${var.name}-private-${var.az}" }
+  tags = {
+    Name                                           = "${var.name}-private-${var.az}"
+    "kubernetes.io/role/internal-elb"              = "1"
+    "kubernetes.io/cluster/${var.name}-eks"        = "shared"
+  }
 }
 
 resource "aws_subnet" "private_b" {
@@ -33,7 +54,11 @@ resource "aws_subnet" "private_b" {
   cidr_block        = var.private_subnet_b_cidr
   availability_zone = var.az_b
 
-  tags = { Name = "${var.name}-private-${var.az_b}" }
+  tags = {
+    Name                                           = "${var.name}-private-${var.az_b}"
+    "kubernetes.io/role/internal-elb"              = "1"
+    "kubernetes.io/cluster/${var.name}-eks"        = "shared"
+  }
 }
 
 # Route table public: ra Internet qua IGW
@@ -50,6 +75,11 @@ resource "aws_route" "public_internet" {
 
 resource "aws_route_table_association" "public" {
   subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.public.id
+}
+
+resource "aws_route_table_association" "public_b" {
+  subnet_id      = aws_subnet.public_b.id
   route_table_id = aws_route_table.public.id
 }
 

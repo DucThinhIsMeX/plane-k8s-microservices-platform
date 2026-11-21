@@ -21,12 +21,97 @@ Hệ thống tập trung giải quyết bài toán vận hành nền tảng qu�
 
 ---
 
-## 2. BÓC TÁCH KIẾN TRÚC MÃ NGUỒN PLANE VỚI HỆ SINH THÁI AWS NATIVE
+## 2. BÓC TÁCH KIẾN TRÚC & NGHIỆP VỤ ỨNG DỤNG PLANE (`makeplane/plane`)
 
-* **Kho mã nguồn mở gốc (Plane HQ)**: [https://github.com/makeplane/plane](https://github.com/makeplane/plane) *(Hơn 33.000 stars trên GitHub - Nền tảng quản trị công việc và dự án mã nguồn mở hiện đại)*.
+* **Kho mã nguồn mở gốc (Plane HQ)**: [https://github.com/makeplane/plane](https://github.com/makeplane/plane) *(Hơn 33.000 stars trên GitHub - Nền tảng quản lý dự án và theo dõi tiến độ công việc vi dịch vụ mã nguồn mở hàng đầu thế giới)*.
 * **Kho lưu trữ triển khai đồ án (DevOps Platform)**: [https://github.com/DucThinhIsMeX/plane-k8s-microservices-platform](https://github.com/DucThinhIsMeX/plane-k8s-microservices-platform).
 
-### 2.1. Bảng quy hoạch bóc tách thành phần với AWS Native Services
+### 2.1. Bản chất nghiệp vụ: Ứng dụng Plane giải quyết bài toán gì?
+**Plane** là giải pháp mã nguồn mở thay thế trực tiếp cho các nền tảng quản trị công việc thương mại đóng như **Jira, Linear hay Asana**. Ứng dụng phục vụ toàn diện quy trình phát triển phần mềm và quản trị dự án công nghệ:
+1. **Quản lý công việc & Vấn đề (Issue & Bug Tracking)**: Tạo, gán việc, phân loại lỗi/tính năng, gắn nhãn (labels), thiết lập mức độ ưu tiên (Urgent, High, Medium, Low) và thời hạn hoàn thành.
+2. **Không gian làm việc & Bảng Kanban trực quan (Kanban Boards & Views)**: Cho phép chuyển đổi linh hoạt giữa dạng Danh sách (List), Bảng tính (Spreadsheet), Lịch (Calendar) và Bảng Kanban kéo-thả để theo dõi trạng thái công việc (*Backlog $\to$ Todo $\to$ In Progress $\to$ Done*).
+3. **Quản lý chu kỳ phát triển Agile/Scrum (Cycles & Sprints)**: Lập kế hoạch theo từng Sprint, theo dõi tiến độ hoàn thành và phân tích biểu đồ năng suất (Burn-down chart).
+4. **Phân hệ chức năng dự án (Modules & Epics)**: Gom nhóm các task thành từng module hoặc tính năng lớn của sản phẩm.
+5. **Tài liệu & Đặc tả dự án (Pages & Docs)**: Soạn thảo tài liệu yêu cầu, biên bản họp và tài liệu kiến trúc kỹ thuật trực tiếp trên nền tảng.
+6. **Cộng tác thời gian thực (Real-time Collaboration)**: Khi một kỹ sư cập nhật trạng thái thẻ bài trên Kanban hoặc bình luận, màn hình của toàn bộ thành viên trong nhóm tự động cập nhật ngay lập tức mà không cần tải lại trang.
+
+---
+
+### 2.2. Sơ đồ mô hình chức năng & luồng nghiệp vụ của ứng dụng Plane
+
+Sơ đồ thể hiện trực quan vai trò người dùng, các phân hệ chức năng nghiệp vụ của Plane và cách các vi dịch vụ bên dưới hiện thực hóa các tính năng đó:
+
+```mermaid
+flowchart TB
+    %% NHÓM NGƯỜI DÙNG DOANH NGHIỆP
+    subgraph USERS[" 👥 NHÓM NGƯỜI DÙNG & VAI TRÒ DOANH NGHIỆP "]
+        direction LR
+        PM["👔 Quản lý Dự án (PM / PO)"]
+        DEV["👨‍💻 Kỹ sư Phát triển (Dev / DevOps)"]
+        QA["🐞 Kỹ sư Kiểm thử (QA / Tester)"]
+    end
+
+    %% CÁC TÍNH NĂNG NGHIỆP VỤ CỐT LÕI CỦA ỨNG DỤNG PLANE
+    subgraph APP_FEATURES[" 📋 NỀN TẢNG QUẢN TRỊ DỰ ÁN & TIẾN ĐỘ PLANE (BUSINESS CAPABILITIES) "]
+        direction TB
+
+        subgraph F_KANBAN[" 1. Quản Trị Công Việc Trực Quan "]
+            direction LR
+            FEAT_KANBAN["📊 Bảng Kanban kéo-thả<br/>(Backlog -> In Progress -> Done)"]
+            FEAT_ISSUES["🐛 Theo dõi Task & Lỗi<br/>(Gán người làm, độ ưu tiên, deadline)"]
+        end
+
+        subgraph F_AGILE[" 2. Quy Trình Agile & Quản Lý "]
+            direction LR
+            FEAT_CYCLES["🔄 Chu kỳ Sprint (Cycles)<br/>(Kế hoạch & Đo lường Burn-down)"]
+            FEAT_MODULES["🧩 Phân hệ tính năng (Modules)<br/>(Quản lý tính năng lớn / Epics)"]
+        end
+
+        subgraph F_COLLAB[" 3. Tài Liệu & Cộng Tác "]
+            direction LR
+            FEAT_DOCS["📝 Wiki & Pages dự án<br/>(Soạn thảo tài liệu đặc tả)"]
+            FEAT_REALTIME["⚡ Cộng tác thời gian thực<br/>(Nhận thông báo, cập nhật Kanban tức thì)"]
+        end
+    end
+
+    %% CÁC VI DỊCH VỤ VẬN HÀNH BÊN DƯỚI (EKS PODS)
+    subgraph MICROSERVICES[" ⚙️ CÁC VI DỊCH VỤ THỰC THI CHỨC NĂNG (KUBERNETES PODS) "]
+        direction TB
+        SVC_WEB["plane-frontend (Next.js)<br/>Cung cấp giao diện Web, Kanban, Pages"]
+        SVC_LIVE["plane-live (Node.js WebSocket)<br/>Đồng bộ hóa tức thì các thao tác kéo-thả"]
+        SVC_API["plane-api (Django REST Core)<br/>Xử lý toàn bộ logic nghiệp vụ, phân quyền"]
+        SVC_WORKER["plane-worker & beat (Celery)<br/>Gửi email thông báo, xuất báo cáo, tác vụ ngầm"]
+        SVC_CACHE[("plane-redis<br/>Bộ nhớ đệm & Kênh truyền tin thời gian thực")]
+    end
+
+    %% TẦNG LƯU TRỮ DỮ LIỆU ĐÁM MÂY (AWS NATIVE PAAS)
+    subgraph DATA_STORAGE[" ☁️ TẦNG LƯU TRỮ DỮ LIỆU BỀN VỮNG (AWS MANAGED SERVICES) "]
+        direction LR
+        DB[("🗄️ Amazon RDS PostgreSQL 16.3<br/>Lưu thông tin Dự án, Thành viên, Tasks, Sprints, Comments")]
+        STORAGE["📦 Amazon S3 Bucket<br/>Lưu trữ Tài liệu đính kèm, Ảnh chụp lỗi (Screenshots), Avatars")]
+    end
+
+    %% TƯƠNG TÁC NGHIỆP VỤ
+    USERS ==>|Truy cập qua trình duyệt| SVC_WEB
+    SVC_WEB -->|Hiển thị & Tương tác| APP_FEATURES
+
+    FEAT_KANBAN & FEAT_ISSUES & FEAT_CYCLES & FEAT_MODULES & FEAT_DOCS -->|Gọi REST API| SVC_API
+    FEAT_REALTIME <-->|Kết nối WebSocket thời gian thực| SVC_LIVE
+
+    SVC_LIVE <-->|Pub/Sub sự kiện realtime| SVC_CACHE
+    SVC_API <-->|Đẩy sự kiện & Lưu phiên cache| SVC_CACHE
+    SVC_CACHE -->|Rút tác vụ bất đồng bộ| SVC_WORKER
+
+    SVC_API ==>|Lưu trữ & Truy vấn dữ liệu nghiệp vụ| DB
+    SVC_WORKER ==>|Cập nhật trạng thái tác vụ nền| DB
+
+    SVC_API ==>|Tải / Xuất tệp đính kèm| STORAGE
+    SVC_WORKER ==>|Lưu trữ báo cáo xuất bản| STORAGE
+```
+
+---
+
+### 2.3. Bảng quy hoạch bóc tách thành phần với AWS Native Services
 
 | Thành phần của Plane | Công nghệ nền tảng | Dịch vụ AWS Native đảm nhiệm | Lợi thế kỹ thuật vượt trội |
 | :--- | :--- | :--- | :--- |
@@ -40,75 +125,6 @@ Hệ thống tập trung giải quyết bài toán vận hành nền tảng qu�
 | **Lưu trữ tệp tin & Media** | Object Storage API | **Amazon S3 Bucket** | Lưu trữ avatar, file đính kèm với độ bền 99.999999999% (11 số 9), tích hợp CORS và Pre-signed URLs. |
 | **Bảo mật & Credentials** | API Keys & DB Passwords | **AWS Secrets Manager** | Quản lý mật khẩu tập trung, mã hóa bằng AWS KMS, không lưu mật khẩu tĩnh trong mã nguồn. |
 | **Cân bằng tải & Ingress** | HTTP/HTTPS Traffic | **AWS Application Load Balancer (ALB)** | Cân bằng tải Layer 7 thông minh, định tuyến URL path (`/`, `/api`, `/live`), tích hợp SSL/TLS. |
-
-### 2.2. Sơ đồ luồng hoạt động tương tác giữa các vi dịch vụ (Service Interaction & Data Flow)
-
-Sơ đồ mô tả chi tiết cách thức các vi dịch vụ của Plane phối hợp vận hành và giao tiếp với các dịch vụ dữ liệu chuyên dụng của AWS:
-
-```mermaid
-flowchart LR
-    %% KHÁCH HÀNG TRUY CẬP
-    subgraph CLIENT_ZONE[" 🌐 TRÌNH DUYỆT NGƯỜI DÙNG "]
-        USER_UI["Người Dùng / Client Browser"]
-    end
-
-    %% TẦNG ĐIỀU HƯỚNG & CÂN BẰNG TẢI
-    subgraph INGRESS_LAYER[" 🔀 TẦNG CÂN BẰNG TẢI & ĐIỀU HƯỚNG (LAYER 7) "]
-        ALB["AWS Application Load Balancer (ALB)<br/>Định tuyến thông minh theo URI Path"]
-    end
-
-    %% TẦNG VI DỊCH VỤ TÍNH TOÁN TRÊN EKS
-    subgraph EKS_ZONE[" ☸️ TẦNG TÍNH TOÁN PHI TRẠNG THÁI (AMAZON EKS PODS) "]
-        direction TB
-        MIGRATOR["plane-migrator<br/>(K8s Pre-run Migration Job)"]
-        FE["plane-frontend<br/>(Next.js App Server)"]
-        API["plane-api<br/>(Django REST Framework Core)"]
-        LIVE["plane-live<br/>(Node.js WebSocket Gateway)"]
-        REDIS[("plane-redis<br/>(Session Cache, Broker & Pub/Sub)")]
-        BEAT["plane-beat<br/>(Celery Periodic Scheduler)"]
-        WORKER["plane-worker<br/>(Celery Async Tasks Worker)"]
-    end
-
-    %% TẦNG DỊCH VỤ DỮ LIỆU AWS NATIVE
-    subgraph AWS_PAAS[" ☁️ TẦNG DỊCH VỤ DỮ LIỆU NỀN TẢNG (AWS MANAGED PAAS) "]
-        direction TB
-        RDS[("🗄️ Amazon RDS PostgreSQL 16.3<br/>- Users, Workspaces, Projects, Issues<br/>- Multi-AZ High Availability & PITR")]
-        S3["📦 Amazon S3 Bucket<br/>- Avatars, Task Attachments, Document Exports<br/>- Độ bền 11 số 9 & Pre-signed URLs")]
-        SECRETS["🔐 AWS Secrets Manager<br/>- DB Credentials, Django Secret Keys, KMS")]
-    end
-
-    %% LUỒNG TRUY CẬP TỪ BROWSER
-    USER_UI -->|1. HTTP GET / | ALB
-    ALB -->|Chuyển tiếp cổng 3000| FE
-    FE -.->|Render HTML / Next.js Bundle| USER_UI
-
-    USER_UI -->|2. REST API Requests /api/* | ALB
-    ALB -->|Chuyển tiếp cổng 8000| API
-
-    USER_UI <-->|3. WebSocket WSS /live/* | ALB
-    ALB <-->|Duy trì kết nối thời gian thực cổng 3001| LIVE
-
-    %% LUỒNG KHỞI TẠO VÀ XÁC THỰC
-    MIGRATOR ==>|0. Khởi chạy Schema Migration tự động| RDS
-    API -.->|Đọc mật khẩu DB và Secret Key an toàn| SECRETS
-
-    %% LUỒNG NGHIỆP VỤ CỦA PLANE-API
-    API ==>|Truy vấn & Ghi nhận dữ liệu nghiệp vụ| RDS
-    API ==>|Cấp phát Pre-signed URL / Tải file| S3
-    API <-->|Lưu trữ Cache phiên & Rate Limiting| REDIS
-    API -->|Đẩy tác vụ nền vào hàng đợi Celery| REDIS
-    API -->|Publish sự kiện thay đổi dữ liệu| REDIS
-
-    %% LUỒNG TÁC VỤ NỀN CELERY
-    BEAT -->|Lên lịch các tác vụ định kỳ| REDIS
-    REDIS -->|Rút tác vụ bất đồng bộ| WORKER
-    WORKER ==>|Cập nhật kết quả tác vụ vào DB| RDS
-    WORKER ==>|Lưu file báo cáo export lên S3| S3
-
-    %% LUỒNG THỜI GIAN THỰC (REALTIME COLLABORATION)
-    REDIS -.->|Subscribe kênh sự kiện Pub/Sub| LIVE
-    LIVE -.->|Phát sóng cập nhật tức thì (Kanban boards, Tasks)| USER_UI
-```
 
 ---
 
@@ -272,24 +288,3 @@ $$\text{Developer} \xrightarrow{\text{git push}} \text{GitHub Actions CI} \xrigh
    * Tiến hành kéo cấu hình về và áp dụng xuống cụm (`Auto-Sync`) theo chiến lược **Rolling Update** (không gián đoạn dịch vụ).
    * Kích hoạt cơ chế **Self-Healing**: Mọi hành vi sửa đổi thủ công trên cụm đều tự động bị ghi đè về đúng trạng thái khai báo trong Git.
 
----
-
-## 6. KẾ HOẠCH TRIỂN KHAI 4 TUẦN (ROADMAP HOÀN THÀNH ĐỒ ÁN)
-
-Lịch trình chi tiết đảm bảo hoàn thành đồ án đúng hạn bảo vệ:
-
-* **Tuần 1 (Hiện tại - Chốt cuối tuần này)**:
-  * [x] Quy hoạch lại 100% hệ thống sang hệ sinh thái **AWS Native Services** (EKS, ECR, RDS, S3, Secrets Manager).
-  * [x] Bóc tách kiến trúc mã nguồn mở **Plane** và hoàn thiện sơ đồ Master Architecture duy nhất.
-  * [x] Viết và kiểm thử thành công mã nguồn **Terraform** (`terraform plan: 78 to add, 0 to destroy` trên nhánh `feature/aws-eks`).
-  * [x] Hoàn thiện tài liệu kỹ thuật báo cáo Giảng viên hướng dẫn.
-* **Tuần 2: Cấp Phát Thực Tế Cụm AWS Native Infrastructure**:
-  * Chạy `terraform apply` khởi tạo thực tế: Amazon EKS Cluster, EKS Managed Node Group, Amazon ECR, Amazon RDS PostgreSQL, Amazon S3, AWS Secrets Manager.
-  * Cấu hình `kubectl` kết nối tới EKS, triển khai thử nghiệm Plane và kiểm tra lưu trữ dữ liệu lên RDS & S3.
-* **Tuần 3: Tích Hợp Toàn Diện Pipeline GitOps & Tự Động Co Giãn (HPA)**:
-  * Kết nối ArgoCD vào cụm EKS, tự động hóa luồng đồng bộ từ GitHub Repository.
-  * Cấu hình và kiểm thử tính năng tự động co giãn Horizontal Pod Autoscaler (HPA) khi giả lập tăng tải.
-  * Thiết lập quét bảo mật container tự động với Trivy trong CI pipeline.
-* **Tuần 4: Đo Lường Hiệu Năng, Kiểm Thử Chịu Tải (Load Test) & Báo Cáo Luận Văn**:
-  * Thực hiện kiểm thử chịu tải bằng công cụ **k6 / Locust** mô phỏng 500 – 1.000 người dùng truy cập đồng thời để đánh giá hiệu quả của HPA và tính ổn định của cụm EKS + RDS.
-  * Hoàn thiện toàn bộ báo cáo tốt nghiệp, slide thuyết trình và video demo hệ thống phục vụ hội đồng bảo vệ.
